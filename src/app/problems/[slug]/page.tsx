@@ -29,12 +29,12 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
   const p = problem as Problem;
 
   return (
-    <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
+    <div className="flex flex-1 min-h-0 w-full px-4 py-8 sm:px-6 lg:px-8">
       {/* Resizable two-panel layout: description ↔ editor */}
       <ResizableProblemLayout
         left={
-          <div className="h-full w-full rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
-            <div className="mb-4">
+          <div className="flex h-full min-h-0 w-full flex-col rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
+            <div className="mb-4 shrink-0">
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-white">{p.title}</h1>
                 <DifficultyBadge difficulty={p.difficulty} />
@@ -51,11 +51,13 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
               </div>
             </div>
 
-            <MarkdownRenderer content={p.description} />
+            <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+              <MarkdownRenderer content={p.description} />
+            </div>
           </div>
         }
         right={
-          <div className="h-full w-full">
+          <div className="h-full min-h-0 w-full">
             <Lean4Editor code={p.starter_code} />
           </div>
         }

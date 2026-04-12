@@ -29,7 +29,7 @@ export default function Lean4Editor({ code, lean4webUrl }: Lean4EditorProps) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-zinc-700">
+    <div className="flex flex-col h-full overflow-hidden rounded-lg border border-zinc-700">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800 px-4 py-2">
         <span className="text-sm font-medium text-zinc-300">
           Lean 4 Editor
@@ -45,7 +45,7 @@ export default function Lean4Editor({ code, lean4webUrl }: Lean4EditorProps) {
       </div>
       <iframe
         src={src}
-        className="h-[600px] w-full bg-zinc-900"
+        className="flex-1 w-full bg-zinc-900"
         allow="clipboard-read; clipboard-write"
         sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
         title="Lean 4 Web Editor"

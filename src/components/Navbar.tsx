@@ -7,12 +7,12 @@ export default function Navbar() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
 
   return (
-    <nav className="border-b border-zinc-800 bg-zinc-950">
+    <nav className="border-b border-[#3c3c3c] bg-[#252526]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-white">
+            <Link href="/" className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-[#d4d4d4]">
               Leet<span className="text-emerald-400">Lean</span>
             </span>
           </Link>
@@ -21,14 +21,14 @@ export default function Navbar() {
           <div className="flex items-center gap-6">
             <Link
               href="/problems"
-              className="text-sm font-medium text-zinc-300 transition hover:text-white"
+              className="text-sm font-medium text-[#d4d4d4] transition hover:text-white"
             >
               Problems
             </Link>
 
             {/* Auth */}
             {loading ? (
-              <div className="h-8 w-20 animate-pulse rounded bg-zinc-800" />
+              <div className="h-8 w-20 animate-pulse rounded bg-[#333333]" />
             ) : user ? (
               <div className="flex items-center gap-3">
                 {user.user_metadata?.avatar_url && (
@@ -38,12 +38,12 @@ export default function Navbar() {
                     className="h-8 w-8 rounded-full"
                   />
                 )}
-                <span className="text-sm text-zinc-300">
+                <span className="text-sm text-[#d4d4d4]">
                   {user.user_metadata?.full_name || user.email}
                 </span>
                 <button
                   onClick={signOut}
-                  className="rounded-md bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-zinc-700"
+                  className="rounded-md bg-[#333333] px-3 py-1.5 text-sm text-[#d4d4d4] transition hover:bg-[#3a3a3a]"
                 >
                   Sign Out
                 </button>

@@ -72,12 +72,12 @@ export default function ResizableProblemLayout({
   return (
     <div
       ref={containerRef}
-      className="flex w-full"
+      className="flex min-h-0 w-full flex-1 items-stretch"
       style={{ position: "relative" }}
     >
       {/* Left panel */}
       <div
-        className="overflow-y-auto"
+        className="h-full min-h-0 overflow-y-auto"
         style={{ width: `${leftPercent}%`, minWidth: minPanelPx }}
       >
         {left}
@@ -105,7 +105,7 @@ export default function ResizableProblemLayout({
 
       {/* Right panel */}
       <div
-        className="overflow-y-auto"
+        className="h-full min-h-0 overflow-y-auto"
         style={{ width: `${100 - leftPercent}%`, minWidth: minPanelPx }}
       >
         {right}
