@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import Lean4Editor from "@/components/Lean4Editor";
+import ResizableProblemLayout from "@/components/ResizableProblemLayout";
 
 export const revalidate = 60;
 
@@ -47,21 +48,22 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
         </div>
       </div>
 
-      {/* Two-column layout on large screens — full-width, left-aligned */}
-      <div className="grid gap-8 lg:grid-cols-2 items-start w-full">
-        {/* Left: Problem Description */}
-        <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">
-            Description
-          </h2>
-          <MarkdownRenderer content={p.description} />
-        </div>
-
-        {/* Right: Lean 4 Editor */}
-        <div className="w-full">
-          <Lean4Editor code={p.starter_code} />
-        </div>
-      </div>
+      {/* Resizable two-panel layout: description ↔ editor */}
+      <ResizableProblemLayout
+        left={
+          <div className="h-full w-full rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-white">
+              Description
+            </h2>
+            <MarkdownRenderer content={p.description} />
+          </div>
+        }
+        right={
+          <div className="h-full w-full">
+            <Lean4Editor code={p.starter_code} />
+          </div>
+        }
+      />
     </div>
   );
 }
