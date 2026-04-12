@@ -71,7 +71,7 @@ export default async function ProblemsPage() {
                   <td className="px-6 py-4">
                     <Link
                       href={`/problems/${problem.slug}`}
-                      className="text-sm font-medium text-white transition hover:text-emerald-400"
+                      className="text-sm font-medium text-white transition hover:text-[#6aadfe]"
                     >
                       {problem.title}
                     </Link>

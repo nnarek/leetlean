@@ -6,13 +6,13 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#6aadfe]/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#6aadfe]/5 via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-5xl font-bold tracking-tight text-white sm:text-7xl">
-              Leet<span className="text-emerald-400">Lean</span>
+              Leet<span className="text-[#6aadfe]">Lean</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-zinc-300 sm:text-xl">
               Competitive theorem proving in{" "}
@@ -23,7 +23,7 @@ export default function HomePage() {
             <div className="mt-10 flex items-center justify-center gap-4">
               <Link
                 href="/problems"
-                className="rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
+                className="rounded-lg bg-[#6aadfe] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#6aadfe]/25 transition hover:bg-[#6aadfe]"
               >
                 Start Solving →
               </Link>
@@ -68,7 +68,7 @@ export default function HomePage() {
           <div className="grid gap-8 md:grid-cols-3">
             {/* Feature 1 */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#6aadfe]/10 text-[#6aadfe]">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -95,7 +95,7 @@ export default function HomePage() {
 
             {/* Feature 2 */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#6aadfe]/10 text-[#6aadfe]">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -123,7 +123,7 @@ export default function HomePage() {
 
             {/* Feature 3 */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-8">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#6aadfe]/10 text-[#6aadfe]">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -199,7 +199,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/problems"
-            className="mt-8 inline-block rounded-lg bg-emerald-500 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
+            className="mt-8 inline-block rounded-lg bg-[#6aadfe] px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-[#6aadfe]/25 transition hover:bg-[#6aadfe]"
           >
             Browse Problems
           </Link>

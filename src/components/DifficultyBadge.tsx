@@ -3,7 +3,7 @@
 import { Difficulty } from "@/lib/types";
 
 const colors: Record<Difficulty, string> = {
-  easy: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  easy: "bg-[#6aadfe]/10 text-[#6aadfe] border-[#6aadfe]/20",
   medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   hard: "bg-red-500/10 text-red-400 border-red-500/20",
 };

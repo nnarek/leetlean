@@ -38,7 +38,7 @@ export default function Lean4Editor({ code, lean4webUrl }: Lean4EditorProps) {
           href={src}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-zinc-400 transition hover:text-emerald-400"
+          className="text-xs text-zinc-400 transition hover:text-[#6aadfe]"
         >
           Open in new tab ↗
         </a>

@@ -7,7 +7,7 @@ interface ResizableProblemLayoutProps {
   left: React.ReactNode;
   /** Right panel content (editor) */
   right: React.ReactNode;
-  /** Initial width of the left panel as a percentage (0–100). Default 50. */
+  /** Initial width of the left panel as a percentage (0–100). Default 36. */
   defaultLeftPercent?: number;
   /** Minimum width for either panel in pixels. Default 280. */
   minPanelPx?: number;
@@ -20,7 +20,7 @@ interface ResizableProblemLayoutProps {
 export default function ResizableProblemLayout({
   left,
   right,
-  defaultLeftPercent = 50,
+  defaultLeftPercent = 36,
   minPanelPx = 280,
 }: ResizableProblemLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,7 +89,7 @@ export default function ResizableProblemLayout({
         className={`
           relative z-10 flex w-2 flex-shrink-0 cursor-col-resize items-center justify-center
           transition-colors duration-150
-          ${isDragging ? "bg-emerald-500/40" : "bg-zinc-700/50 hover:bg-emerald-500/30"}
+          ${isDragging ? "bg-[#6aadfe]/40" : "bg-zinc-700/50 hover:bg-[#6aadfe]/30"}
         `}
         title="Drag to resize"
       >

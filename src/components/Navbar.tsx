@@ -13,7 +13,7 @@ export default function Navbar() {
           {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-[#d4d4d4]">
-              Leet<span className="text-emerald-400">Lean</span>
+              Leet<span className="text-[#6aadfe]">Lean</span>
             </span>
           </Link>
 
