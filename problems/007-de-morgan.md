@@ -11,16 +11,14 @@ starter_code: |
   theorem de_morgan (P Q : Prop) : ¬(P ∨ Q) → ¬P ∧ ¬Q := by
     sorry
 ---
-
-# De Morgan's Law
-
-## Goal
+ 
+### Goal
 
 Prove that `¬(P ∨ Q) → ¬P ∧ ¬Q`.
 
 This is one direction of De Morgan's Law. Note that this direction is provable constructively (no need for classical logic).
 
-## Background
+### Background
 
 De Morgan's Laws relate negation with conjunction and disjunction:
 - `¬(P ∨ Q) ↔ ¬P ∧ ¬Q`
@@ -28,12 +26,12 @@ De Morgan's Laws relate negation with conjunction and disjunction:
 
 Remember that `¬P` is defined as `P → False` in Lean 4.
 
-## Hints
+### Hints
 
 1. `intro h` to get `h : ¬(P ∨ Q)`, i.e., `h : P ∨ Q → False`.
 2. `constructor` to split the `∧` goal into `¬P` and `¬Q`.
 3. For each part, introduce the hypothesis and derive `False` by applying `h` to an appropriate `Or` term.
 
-## Key Insight
+### Key Insight
 
 Since `¬P` means `P → False`, to prove `¬P` you just `intro hp` and then show `False`. You can get `False` from `h` by feeding it `Or.inl hp`.

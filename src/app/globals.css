@@ -2,13 +2,26 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
+  /* Visual Studio / VS Code Dark-like palette */
+  --background: #1e1e1e; /* editor background */
+  --foreground: #d4d4d4; /* main text color */
+  --surface: #252526; /* panels, cards */
+  --sidebar: #2d2d30; /* sidebars */
+  --border: #3c3c3c; /* subtle borders */
+  --muted: #9a9a9a; /* secondary text */
+  --accent: #007acc; /* primary blue accent */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44747;
+  --code-bg: #2d2d30; /* inline code background */
+  --card-bg: var(--surface);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -17,6 +30,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom scrollbar */
@@ -26,16 +41,22 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: var(--surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #505050;
+}
+
+/* Selection */
+::selection {
+  background: color(var(--accent) lightness(40%));
+  color: white;
 }
 
 /* Remove typographic backticks added by the prose (typography plugin) for inline code */

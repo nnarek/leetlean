@@ -11,24 +11,22 @@ starter_code: |
     sorry
 ---
 
-# And Introduction
-
-## Goal
+### Goal
 
 Given propositions `P` and `Q`, and proofs `hp : P` and `hq : Q`, prove `P ∧ Q`.
 
-## Background
+### Background
 
 The conjunction `P ∧ Q` (read "P and Q") is true when both `P` and `Q` are true. In Lean 4, you construct a proof of `P ∧ Q` by providing proofs of both `P` and `Q`.
 
-## Hints
+### Hints
 
 - The `constructor` tactic splits an `∧` goal into two sub-goals.
 - The `exact` tactic can close a goal if you provide exactly the right proof term.
 - You can also use `And.intro hp hq` in term mode.
 - The `⟨hp, hq⟩` anonymous constructor syntax also works.
 
-## Reference
+### Reference
 
 ```lean
 -- Example

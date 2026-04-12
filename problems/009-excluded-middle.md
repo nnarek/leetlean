@@ -13,15 +13,13 @@ starter_code: |
     sorry
 ---
 
-# Law of Excluded Middle (Application)
-
-## Goal
+### Goal
 
 Prove **double negation elimination**: `¬¬P → P`.
 
 This requires classical logic — it is not provable constructively.
 
-## Background
+### Background
 
 In constructive logic (the default in Lean 4), `¬¬P → P` is **not** provable. However, with the classical axiom `em : ∀ (P : Prop), P ∨ ¬P` (law of excluded middle), we can prove it.
 
@@ -29,13 +27,13 @@ The `Classical` namespace provides:
 - `Classical.em (P : Prop) : P ∨ ¬P`
 - `Classical.byContradiction : (¬P → False) → P`
 
-## Hints
+### Hints
 
 - Use `intro hnnp` to get `hnnp : ¬¬P`, i.e., `hnnp : ¬P → False`.
 - Use `cases Classical.em P with` to split into `P` or `¬P`.
 - If `P`, you're done. If `¬P`, apply `hnnp` to derive `False`, then use `contradiction` or `exact absurd hnp hnnp`.
 
-## Alternative
+### Alternative
 
 ```lean
 open Classical in

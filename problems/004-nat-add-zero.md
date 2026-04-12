@@ -10,14 +10,12 @@ starter_code: |
   theorem add_zero_right (n : Nat) : n + 0 = n := by
     sorry
 ---
-
-# Natural Number: n + 0 = n
-
-## Goal
+ 
+### Goal
 
 Prove that for any natural number `n`, we have `n + 0 = n`.
 
-## Background
+### Background
 
 In Lean 4's definition of natural numbers, addition is defined recursively on the **second** argument:
 - `n + 0 = n` (by definition)
@@ -25,11 +23,11 @@ In Lean 4's definition of natural numbers, addition is defined recursively on th
 
 Since `n + 0 = n` holds by the definitional unfolding of `+`, this should be provable just by reflexivity.
 
-## Hints
+### Hints
 
 - Try `rfl` — it works when both sides are definitionally equal.
 - If `rfl` doesn't work in your Lean version, try `simp` or `omega`.
 
-## Note
+### Note
 
 This is a fundamental lemma that appears in every formalization of arithmetic. In Mathlib, it's called `Nat.add_zero`.

@@ -12,24 +12,22 @@ starter_code: |
     sorry
 ---
 
-# Implies Transitivity
-
-## Goal
+### Goal
 
 Prove that implication is transitive: if `P → Q` and `Q → R`, then `P → R`.
 
-## Background
+### Background
 
 Implication (`→`) in Lean 4 corresponds to function types. A proof of `P → Q` is literally a function that takes a proof of `P` and returns a proof of `Q`. Transitivity of implication is just function composition!
 
-## Hints
+### Hints
 
 - Use `intro hp` to assume `P` and get a proof `hp : P`.
 - Then use `apply hqr` to reduce the goal to proving `Q`.
 - Then use `apply hpq` to reduce the goal to proving `P`.
 - Finally `exact hp` closes the goal.
 
-## Alternative Approaches
+### Alternative Approaches
 
 ```lean
 -- Term-mode proof (function composition)

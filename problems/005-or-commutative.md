@@ -10,24 +10,22 @@ starter_code: |
   theorem or_comm_proof (P Q : Prop) : P ∨ Q → Q ∨ P := by
     sorry
 ---
-
-# Or is Commutative
-
-## Goal
+ 
+### Goal
 
 Prove that disjunction (logical OR) is commutative: `P ∨ Q → Q ∨ P`.
 
-## Background
+### Background
 
 A proof of `P ∨ Q` is either a proof of `P` (left injection) or a proof of `Q` (right injection). To prove commutativity, you need to case-split on which side holds and inject it into the opposite side.
 
-## Hints
+### Hints
 
 - Use `intro h` to get `h : P ∨ Q`.
 - Use `cases h with` (or `rcases h with hp | hq`) to split into cases.
 - In the `P` case, use `Or.inr` (or `right`); in the `Q` case, use `Or.inl` (or `left`).
 
-## Tactics Reference
+### Tactics Reference
 
 | Tactic | Effect |
 |--------|--------|

@@ -16,9 +16,7 @@ starter_code: |
     sorry
 ---
 
-# Strong Induction Principle
-
-## Goal
+### Goal
 
 Prove the **strong induction** (also called **complete induction**) principle for natural numbers:
 
@@ -26,11 +24,11 @@ If for every `n`, `P n` holds whenever `P m` holds for all `m < n`, then `P n` h
 
 $$\left(\forall n,\; (\forall m < n,\; P(m)) \Rightarrow P(n)\right) \Rightarrow \forall n,\; P(n)$$
 
-## Background
+### Background
 
 Ordinary induction proves `P n` by assuming `P (n-1)`. Strong induction is more powerful: to prove `P n`, you may assume `P m` for **all** `m < n`. This is particularly useful for proofs where you need to "look back" more than one step.
 
-## Hints
+### Hints
 
 - The key insight is to prove a stronger statement first: `∀ n, ∀ m, m < n → P m`.
 - Do induction on `n` for this stronger statement.
@@ -38,6 +36,6 @@ Ordinary induction proves `P n` by assuming `P (n-1)`. Strong induction is more 
 - Inductive step: given the IH for `n`, prove for `n + 1`. For `m < n + 1`, either `m < n` (use IH) or `m = n` (use hypothesis `h`).
 - The `omega` tactic helps with the arithmetic reasoning.
 
-## This is Hard
+### This is Hard
 
 This problem tests your understanding of both induction and how to strengthen induction hypotheses — a crucial proof technique in formal verification.

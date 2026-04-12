@@ -12,15 +12,13 @@ starter_code: |
     sorry
 ---
 
-# List Reverse Reverse
-
-## Goal
+### Goal
 
 Prove that reversing a list twice yields the original list:
 
 $$\text{reverse}(\text{reverse}(xs)) = xs$$
 
-## Background
+### Background
 
 List reverse is defined recursively:
 - `[].reverse = []`
@@ -28,7 +26,7 @@ List reverse is defined recursively:
 
 Proving `reverse (reverse xs) = xs` requires induction on the list and a key helper lemma about how reverse distributes over append.
 
-## Hints
+### Hints
 
 - You will likely need: `List.reverse_append : (xs ++ ys).reverse = ys.reverse ++ xs.reverse`
 - Do induction on `xs`.
@@ -36,6 +34,6 @@ Proving `reverse (reverse xs) = xs` requires induction on the list and a key hel
 - **Inductive step**: `(x :: xs).reverse.reverse = x :: xs` — unfold reverse, use the append-reverse lemma, then apply the induction hypothesis.
 - `simp [List.reverse_cons, List.reverse_append]` might close goals.
 
-## Difficulty Note
+### Difficulty Note
 
 This is rated **hard** because it requires understanding how multiple list operations interact and potentially proving or invoking auxiliary lemmas.

@@ -30,31 +30,27 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
 
   return (
     <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
-      {/* Problem Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white">{p.title}</h1>
-          <DifficultyBadge difficulty={p.difficulty} />
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {p.tags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Resizable two-panel layout: description ↔ editor */}
       <ResizableProblemLayout
         left={
           <div className="h-full w-full rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-white">
-              Description
-            </h2>
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-white">{p.title}</h1>
+                <DifficultyBadge difficulty={p.difficulty} />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {p.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <MarkdownRenderer content={p.description} />
           </div>
         }

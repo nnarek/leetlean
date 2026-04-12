@@ -19,11 +19,13 @@ export default function Lean4Editor({ code, lean4webUrl }: Lean4EditorProps) {
     process.env.NEXT_PUBLIC_LEAN4WEB_URL ||
     "https://live.lean-lang.org";
 
-  // Build the URL with code in hash fragment
+  // Build the URL with code in hash fragment and force dark theme
   let src = baseUrl;
   if (code) {
     const encodedCode = encodeURIComponent(code);
-    src = `${baseUrl}/#code=${encodedCode}`;
+    src = `${baseUrl}/?theme=dark#code=${encodedCode}&`;
+  } else {
+    src = `${baseUrl}/?theme=dark`;
   }
 
   return (
