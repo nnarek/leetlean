@@ -70,6 +70,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### 7. Publish to Vercel
+
+```bash
+npm run build
+```
+
+1. Create a new project on [Vercel](https://vercel.com/)
+2. Connect your GitHub repository
+3. Go to Settings → Environment Variables and import `.env.local` variables as Sensitive vars
+4. Deploy!
+
+
 ## Adding Problems
 
 1. Create a markdown file in `problems/` (e.g., `011-my-problem.md`)
