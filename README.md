@@ -51,10 +51,10 @@ Alternatively, run the migration manually in the Supabase SQL Editor:
 ### 4. Enable Google Auth
 
 In Supabase Dashboard:
-1. Go to **Authentication → Providers → Google**
+1. Go to **Authentication → Sign In / Providers → Google**
 2. Enable Google provider
 3. Add your Google OAuth client ID and secret
-4. Set redirect URL to `http://localhost:3000/auth/callback`
+4. Set redirect URL to `https://<your-project-ref>.supabase.co/auth/v1/callback` in the Google Cloud Console
 
 ### 5. Seed Problems
 
