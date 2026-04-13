@@ -29,7 +29,7 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
   const p = problem as Problem;
 
   return (
-    <div className="flex flex-1 min-h-0 w-full px-4 py-8 sm:px-6 lg:px-8">
+    <div className="flex flex-1 min-h-0 w-full p-[1px]">
       {/* Resizable two-panel layout: description ↔ editor */}
       <ResizableProblemLayout
         left={
