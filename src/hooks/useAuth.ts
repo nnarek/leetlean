@@ -10,6 +10,19 @@ export function useAuth() {
   const supabase = createClient();
 
   useEffect(() => {
+    // Handle OAuth callback: if an auth code is in the URL, exchange it
+    // for a session client-side (works for both serverless and server modes).
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (!error) {
+          // Clean the code from the URL
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+      });
+    }
+
     const getUser = async () => {
       const {
         data: { user },

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getServerDatabase } from "@/lib/db/server";
 import { Problem } from "@/lib/types";
 import { notFound } from "next/navigation";
 import DifficultyBadge from "@/components/DifficultyBadge";
@@ -6,23 +6,30 @@ import MarkdownRenderer from "@/components/MarkdownRenderer";
 import Lean4Editor from "@/components/Lean4Editor";
 import ResizableProblemLayout from "@/components/ResizableProblemLayout";
 
+// In static-export mode revalidate is ignored (pages are built once).
+// In server mode this enables ISR every 60 s.
 export const revalidate = 60;
 
 interface ProblemPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export async function generateStaticParams() {
+  // When LEETLEAN_SERVERLESS=true (static export), this pre-renders every
+  // problem page at build time.  In server mode it returns [] so pages are
+  // generated on-demand.
+  if (process.env.NEXT_PUBLIC_LEETLEAN_SERVERLESS !== "true") return [];
+  const db = await getServerDatabase();
+  const { problems } = await db.getProblems({ limit: 10000 });
+  return problems.map((p) => ({ slug: p.slug }));
+}
+
 export default async function ProblemPage({ params }: ProblemPageProps) {
   const { slug } = await params;
-  const supabase = await createServerSupabaseClient();
+  const db = await getServerDatabase();
+  const problem = await db.getProblemBySlug(slug);
 
-  const { data: problem, error } = await supabase
-    .from("problems")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  if (error || !problem) {
+  if (!problem) {
     notFound();
   }
 

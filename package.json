@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:static": "NEXT_PUBLIC_LEETLEAN_SERVERLESS=true next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx scripts/seed-problems.ts"
