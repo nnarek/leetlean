@@ -51,10 +51,19 @@ export function useAuth() {
     });
   };
 
+  const signInWithGitHub = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
 
-  return { user, loading, signInWithGoogle, signOut };
+  return { user, loading, signInWithGoogle, signInWithGitHub, signOut };
 }

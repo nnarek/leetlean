@@ -6,7 +6,7 @@ Sharpen your formal verification skills by proving theorems and verifying code i
 
 - 📝 **Problem library** — Browse problems by difficulty (easy/medium/hard) and category
 - ✏️ **Built-in editor** — Powered by [lean4web](https://github.com/leanprover-community/lean4web) with real-time Lean 4 feedback
-- 🔐 **Google Sign-In** — via Supabase Auth
+- 🔐 **Google & GitHub Sign-In** — via Supabase Auth
 - 🗄️ **Database adapters** — Supabase or Firebase through a shared interface
 - 🚀 **Serverless deployment** — Static export for GitHub Pages when enabled
 - 📄 **Markdown problems** — Author problems as markdown files, seed to DB
@@ -62,6 +62,15 @@ In Supabase Dashboard:
 2. Enable Google provider
 3. Add your Google OAuth client ID and secret
 4. Set redirect URL to `https://<your-project-ref>.supabase.co/auth/v1/callback` in the Google Cloud Console
+
+### 4b. Enable GitHub Auth
+
+1. Go to [GitHub → Settings → Developer settings → OAuth Apps](https://github.com/settings/developers) and click **New OAuth App**
+2. Set **Homepage URL** to your app URL (e.g., `http://localhost:3000`)
+3. Set **Authorization callback URL** to `https://<your-project-ref>.supabase.co/auth/v1/callback`
+4. Register the app and copy the **Client ID** and **Client Secret**
+5. In Supabase Dashboard, go to **Authentication → Sign In / Providers → GitHub**
+6. Enable GitHub provider and paste the Client ID and Client Secret
 
 ### 5. Seed Problems
 
