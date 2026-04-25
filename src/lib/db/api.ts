@@ -11,9 +11,12 @@ export class ApiDatabase implements IDatabase {
     const params = new URLSearchParams();
     if (filter.q) params.set("q", filter.q);
     if (filter.difficulty) params.set("difficulty", filter.difficulty);
-    if (filter.tag) params.set("tag", filter.tag);
+    if (filter.tags && filter.tags.length > 0)
+      params.set("tags", filter.tags.join(","));
     if (filter.page) params.set("page", String(filter.page));
     if (filter.limit) params.set("limit", String(filter.limit));
+    if (filter.sortBy) params.set("sortBy", filter.sortBy);
+    if (filter.sortOrder) params.set("sortOrder", filter.sortOrder);
 
     const res = await fetch(`/api/problems?${params.toString()}`);
     if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -21,9 +24,12 @@ export class ApiDatabase implements IDatabase {
   }
 
   async getProblemBySlug(slug: string): Promise<Problem | null> {
-    const res = await fetch(`/api/problems?q=&limit=1000`);
+    const params = new URLSearchParams({ slug });
+    const res = await fetch(`/api/problems?${params.toString()}`);
     if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const { problems } = (await res.json()) as ProblemsResult;
+    const data = await res.json();
+    if (data.problem !== undefined) return data.problem;
+    const { problems } = data as ProblemsResult;
     return problems.find((p) => p.slug === slug) ?? null;
   }
 

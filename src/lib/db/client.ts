@@ -1,5 +1,5 @@
 import type { IDatabase } from "./types";
-import { isServerless, dbProvider } from "../config";
+import { dbProvider } from "../config";
 import { SupabaseDatabase } from "./supabase";
 import { ApiDatabase } from "./api";
 import { createClient } from "@/lib/supabase/client";
@@ -7,16 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Returns a database instance for use in **client components** (browser).
  *
- * - Serverless mode → talks to Supabase/Firebase directly from the browser.
- * - Server mode    → calls local Next.js API routes so the browser never
- *                    contacts Supabase directly.
+ * Uses the browser Supabase client directly in all modes. The public anon
+ * key is safe for client-side use; RLS policies protect the data.
  */
 export function getClientDatabase(): IDatabase {
-  // Non-serverless: proxy everything through /api/* routes on the Next.js server
-  if (!isServerless) {
-    return new ApiDatabase();
-  }
-
   if (dbProvider === "firebase") {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { FirebaseDatabase } = require("./firebase");
@@ -24,4 +18,9 @@ export function getClientDatabase(): IDatabase {
   }
 
   return new SupabaseDatabase(createClient());
+}
+
+/** Returns an ApiDatabase that proxies through /api/* routes. */
+export function getApiDatabase(): IDatabase {
+  return new ApiDatabase();
 }

@@ -2,18 +2,19 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
 
   return (
-    <nav className="border-b border-[#3c3c3c] bg-[#252526]">
+    <nav className="border-b border-border bg-surface">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-[#d4d4d4]">
-              Leet<span className="text-[#6aadfe]">Lean</span>
+            <span className="text-2xl font-bold text-foreground">
+              Leet<span className="text-accent">Lean</span>
             </span>
           </Link>
 
@@ -21,14 +22,16 @@ export default function Navbar() {
           <div className="flex items-center gap-6">
             <Link
               href="/problems"
-              className="text-sm font-medium text-[#d4d4d4] transition hover:text-white"
+              className="text-sm font-medium text-foreground transition hover:text-accent"
             >
               Problems
             </Link>
 
+            <ThemeToggle />
+
             {/* Auth */}
             {loading ? (
-              <div className="h-8 w-20 animate-pulse rounded bg-[#333333]" />
+              <div className="h-8 w-20 animate-pulse rounded bg-hover" />
             ) : user ? (
               <div className="flex items-center gap-3">
                 {user.user_metadata?.avatar_url && (
@@ -38,12 +41,12 @@ export default function Navbar() {
                     className="h-8 w-8 rounded-full"
                   />
                 )}
-                <span className="text-sm text-[#d4d4d4]">
+                <span className="text-sm text-foreground">
                   {user.user_metadata?.full_name || user.email}
                 </span>
                 <button
                   onClick={signOut}
-                  className="rounded-md bg-[#333333] px-3 py-1.5 text-sm text-[#d4d4d4] transition hover:bg-[#3a3a3a]"
+                  className="rounded-md bg-hover px-3 py-1.5 text-sm text-muted transition hover:text-foreground"
                 >
                   Sign Out
                 </button>
@@ -51,7 +54,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={signInWithGoogle}
-                className="flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100"
+                className="flex items-center gap-2 rounded-md bg-hover px-4 py-2 text-sm font-medium text-foreground transition hover:bg-border"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path

@@ -40,17 +40,17 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
       {/* Resizable two-panel layout: description ↔ editor */}
       <ResizableProblemLayout
         left={
-          <div className="flex h-full min-h-0 w-full flex-col rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
+          <div className="flex h-full min-h-0 w-full flex-col rounded-xl border border-border bg-surface/30 p-6">
             <div className="mb-4 shrink-0">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-white">{p.title}</h1>
+                <h1 className="text-2xl font-bold text-foreground">{p.title}</h1>
                 <DifficultyBadge difficulty={p.difficulty} />
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {p.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400"
+                    className="inline-flex items-center rounded-md bg-badge px-2 py-0.5 text-xs text-muted"
                   >
                     {tag}
                   </span>

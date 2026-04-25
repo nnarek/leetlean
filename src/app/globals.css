@@ -3,17 +3,35 @@
 
 :root {
   /* Visual Studio / VS Code Dark-like palette */
-  --background: #1e1e1e; /* editor background */
-  --foreground: #d4d4d4; /* main text color */
-  --surface: #252526; /* panels, cards */
-  --sidebar: #2d2d30; /* sidebars */
-  --border: #3c3c3c; /* subtle borders */
-  --muted: #9a9a9a; /* secondary text */
-  --accent: #6aadfe; /* primary blue accent */
+  --background: #1e1e1e;
+  --foreground: #d4d4d4;
+  --surface: #252526;
+  --sidebar: #2d2d30;
+  --border: #3c3c3c;
+  --muted: #9a9a9a;
+  --accent: #6aadfe;
+  --hover: #2a2d2e;
+  --input: #3c3c3c;
+  --badge: #2d2d30;
   --success: #4caf50;
   --warning: #ff9800;
   --danger: #f44747;
-  --code-bg: #2d2d30; /* inline code background */
+  --code-bg: #2d2d30;
+  --card-bg: var(--surface);
+}
+
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #1e1e1e;
+  --surface: #f3f3f3;
+  --sidebar: #e8e8e8;
+  --border: #d4d4d4;
+  --muted: #6e6e6e;
+  --accent: #0066b8;
+  --hover: #e8e8e8;
+  --input: #ffffff;
+  --badge: #e8e8e8;
+  --code-bg: #f3f3f3;
   --card-bg: var(--surface);
 }
 
@@ -21,7 +39,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-sidebar: var(--sidebar);
   --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-hover: var(--hover);
+  --color-input: var(--input);
+  --color-badge: var(--badge);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -63,4 +87,51 @@ body {
 .prose :where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))::before,
 .prose :where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))::after {
   content: none !important;
+}
+
+/* Light theme markdown overrides (prose-invert makes everything white) */
+:root[data-theme="light"] .markdown-content p,
+:root[data-theme="light"] .markdown-content li {
+  color: #1e1e1e !important;
+}
+
+:root[data-theme="light"] .markdown-content h1,
+:root[data-theme="light"] .markdown-content h2,
+:root[data-theme="light"] .markdown-content h3,
+:root[data-theme="light"] .markdown-content h4,
+:root[data-theme="light"] .markdown-content strong {
+  color: #1e1e1e !important;
+}
+
+:root[data-theme="light"] .markdown-content code {
+  background: #f3f3f3 !important;
+  color: #0066b8 !important;
+}
+
+:root[data-theme="light"] .markdown-content pre {
+  background: #f3f3f3 !important;
+  border: 1px solid #d4d4d4 !important;
+}
+
+:root[data-theme="light"] .markdown-content pre code {
+  color: #1e1e1e !important;
+}
+
+:root[data-theme="light"] .markdown-content a {
+  color: #0066b8 !important;
+}
+
+:root[data-theme="light"] .markdown-content blockquote {
+  color: #6e6e6e !important;
+  border-left-color: #d4d4d4 !important;
+}
+
+:root[data-theme="light"] .markdown-content hr {
+  border-color: #d4d4d4 !important;
+}
+
+:root[data-theme="light"] .markdown-content th,
+:root[data-theme="light"] .markdown-content td {
+  border-color: #d4d4d4 !important;
+  color: #1e1e1e !important;
 }

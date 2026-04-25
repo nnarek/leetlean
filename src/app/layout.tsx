@@ -29,9 +29,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-100">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('leetlean-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <Navbar />
         <main className="flex flex-1 min-h-0 flex-col">{children}</main>
         <Footer />

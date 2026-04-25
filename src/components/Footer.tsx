@@ -9,19 +9,19 @@ export default function Footer() {
   if (pathname && pathname.startsWith("/problems")) return null;
 
   return (
-    <footer className="border-t border-[#3c3c3c] bg-[#252526] py-8">
+    <footer className="border-t border-border bg-surface py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="text-sm text-[#9e9e9e]">
+          <div className="text-sm text-muted">
             © {new Date().getFullYear()} LeetLean. Competitive theorem proving
             in Lean 4.
           </div>
-          <div className="flex gap-6 text-sm text-[#9e9e9e]">
+          <div className="flex gap-6 text-sm text-muted">
             <a
               href="https://github.com/leanprover-community/lean4web"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition hover:text-[#d4d4d4]"
+              className="transition hover:text-foreground"
             >
               Lean4Web
             </a>
@@ -29,7 +29,7 @@ export default function Footer() {
               href="https://lean-lang.org/"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition hover:text-[#d4d4d4]"
+              className="transition hover:text-foreground"
             >
               Lean 4
             </a>
@@ -37,7 +37,7 @@ export default function Footer() {
               href="https://leanprover-community.github.io/"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition hover:text-[#d4d4d4]"
+              className="transition hover:text-foreground"
             >
               Mathlib
             </a>

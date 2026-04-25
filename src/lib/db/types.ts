@@ -3,9 +3,11 @@ import type { Problem, Difficulty } from "../types";
 export interface ProblemsFilter {
   q?: string;
   difficulty?: Difficulty | "";
-  tag?: string;
+  tags?: string[];
   page?: number;
   limit?: number;
+  sortBy?: "sort_order" | "difficulty" | "title";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface ProblemsResult {

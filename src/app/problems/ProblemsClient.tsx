@@ -6,254 +6,486 @@ import type { Difficulty } from "@/lib/types";
 import { Problem } from "@/lib/types";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import DifficultyBadge from "@/components/DifficultyBadge";
+
+type SortField = "sort_order" | "difficulty" | "title";
+type SortOrder = "asc" | "desc";
+
+const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 
 export default function ProblemsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const db: IDatabase = useMemo(() => getClientDatabase(), []);
 
-  // Read filter state from URL
+  // Read state from URL
   const q = searchParams.get("q") ?? "";
-  const tag = searchParams.get("tag") ?? "";
+  const tagsParam = searchParams.get("tags") ?? "";
+  const selectedTags = useMemo(
+    () => (tagsParam ? tagsParam.split(",").filter(Boolean) : []),
+    [tagsParam]
+  );
   const difficulty = (searchParams.get("difficulty") ?? "") as Difficulty | "";
   const limit = Math.min(100, Number(searchParams.get("limit") ?? 10) || 10);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
+  const sortBy = (searchParams.get("sortBy") ?? "sort_order") as SortField;
+  const sortOrder = (searchParams.get("sortOrder") ?? "asc") as SortOrder;
 
   const [problemList, setProblemList] = useState<Problem[]>([]);
   const [total, setTotal] = useState(0);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [perPageOpen, setPerPageOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+  const perPageRef = useRef<HTMLDivElement>(null);
 
-  // Local form state (mirrors URL until user clicks Apply)
+  // Local search state
   const [formQ, setFormQ] = useState(q);
-  const [formDifficulty, setFormDifficulty] = useState(difficulty);
-  const [formTag, setFormTag] = useState(tag);
-  const [formLimit, setFormLimit] = useState(String(limit));
 
-  // Sync local form state when URL changes (e.g. back/forward navigation)
+  // Sync form state on URL change
   useEffect(() => {
     setFormQ(q);
-    setFormDifficulty(difficulty);
-    setFormTag(tag);
-    setFormLimit(String(limit));
-  }, [q, difficulty, tag, limit]);
+  }, [q]);
 
-  // Fetch all tags once
+  // Fetch tags once
   useEffect(() => {
     db.getAllTags().then(setAllTags);
   }, [db]);
 
-  // Fetch problems whenever URL filter/pagination params change
+  // Close dropdowns on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+      if (perPageRef.current && !perPageRef.current.contains(e.target as Node)) {
+        setPerPageOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Build URL with overrides
+  const buildUrl = useCallback(
+    (overrides: Record<string, string | number | undefined> = {}) => {
+      const params = new URLSearchParams();
+      const vals: Record<string, string> = {
+        q: overrides.q !== undefined ? String(overrides.q) : q,
+        tags: overrides.tags !== undefined ? String(overrides.tags) : tagsParam,
+        difficulty:
+          overrides.difficulty !== undefined
+            ? String(overrides.difficulty)
+            : difficulty,
+        limit:
+          overrides.limit !== undefined
+            ? String(overrides.limit)
+            : String(limit),
+        page:
+          overrides.page !== undefined ? String(overrides.page) : String(page),
+        sortBy:
+          overrides.sortBy !== undefined ? String(overrides.sortBy) : sortBy,
+        sortOrder:
+          overrides.sortOrder !== undefined
+            ? String(overrides.sortOrder)
+            : sortOrder,
+      };
+      if (vals.q) params.set("q", vals.q);
+      if (vals.tags) params.set("tags", vals.tags);
+      if (vals.difficulty) params.set("difficulty", vals.difficulty);
+      params.set("limit", vals.limit);
+      params.set("page", vals.page);
+      if (vals.sortBy !== "sort_order") params.set("sortBy", vals.sortBy);
+      if (vals.sortOrder !== "asc") params.set("sortOrder", vals.sortOrder);
+      return `/problems?${params.toString()}`;
+    },
+    [q, tagsParam, difficulty, limit, page, sortBy, sortOrder]
+  );
+
+  // Fetch problems
   const fetchProblems = useCallback(async () => {
     setLoading(true);
-
     try {
-      const result = await db.getProblems({ q, difficulty, tag, page, limit });
+      const result = await db.getProblems({
+        q,
+        difficulty,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+      });
       setProblemList(result.problems);
       setTotal(result.total);
     } catch (error) {
       console.error("Error fetching problems:", error);
     }
-
     setLoading(false);
-  }, [db, q, difficulty, tag, page, limit]);
+  }, [db, q, difficulty, selectedTags, page, limit, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchProblems();
   }, [fetchProblems]);
 
-  // Derived pagination values
+  // Pagination
   const from = (page - 1) * limit;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const startItem = total === 0 ? 0 : from + 1;
   const endItem = Math.min(total, from + limit);
 
-  // Build a URL string with overrides
-  const buildUrl = (overrides: { page?: number } = {}) => {
-    const params = new URLSearchParams();
-    if (q) params.set("q", q);
-    if (tag) params.set("tag", tag);
-    if (difficulty) params.set("difficulty", difficulty);
-    params.set("limit", String(limit));
-    params.set("page", String(overrides.page ?? page));
-    return `/problems?${params.toString()}`;
+  // Toggle tag (immediate)
+  const toggleTag = (tag: string) => {
+    const newTags = selectedTags.includes(tag)
+      ? selectedTags.filter((t) => t !== tag)
+      : [...selectedTags, tag];
+    router.push(buildUrl({ tags: newTags.join(","), page: 1 }));
   };
 
-  // Apply filters → push new URL (resets to page 1)
-  const handleApply = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (formQ.trim()) params.set("q", formQ.trim());
-    if (formDifficulty) params.set("difficulty", formDifficulty);
-    if (formTag) params.set("tag", formTag);
-    params.set("limit", formLimit);
-    params.set("page", "1");
-    router.push(`/problems?${params.toString()}`);
+  // Sort handler
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      router.push(
+        buildUrl({ sortOrder: sortOrder === "asc" ? "desc" : "asc", page: 1 })
+      );
+    } else {
+      router.push(buildUrl({ sortBy: field, sortOrder: "asc", page: 1 }));
+    }
+    setSortOpen(false);
   };
+
+  // Difficulty toggle (immediate) — toggle on/off, no "All" button
+  const handleDifficulty = (d: Difficulty) => {
+    router.push(buildUrl({ difficulty: difficulty === d ? "" : d, page: 1 }));
+  };
+
+  // Per page change (immediate)
+  const handleLimitChange = (newLimit: string) => {
+    router.push(buildUrl({ limit: newLimit, page: 1 }));
+    setPerPageOpen(false);
+  };
+
+  // Search submit
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(buildUrl({ q: formQ.trim(), page: 1 }));
+  };
+
+  const sortOptions: { value: SortField; label: string }[] = [
+    { value: "sort_order", label: "Problem ID" },
+    { value: "difficulty", label: "Difficulty" },
+    { value: "title", label: "Name" },
+  ];
+
+  const perPageOptions = ["5", "10", "20", "50"];
+  const currentSortLabel = sortOptions.find((o) => o.value === sortBy)?.label;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Problems</h1>
-          <p className="mt-2 text-zinc-400">
-            Prove theorems and verify code in Lean 4. Filter, search, and
-            paginate problems below.
-          </p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Problems</h1>
       </div>
 
-      {/* Filters */}
-      <form onSubmit={handleApply} className="mb-6 grid gap-3 sm:grid-cols-5">
-        <input
-          value={formQ}
-          onChange={(e) => setFormQ(e.target.value)}
-          placeholder="Search by title..."
-          className="col-span-2 rounded-md bg-zinc-900/50 px-3 py-2 text-sm text-white placeholder:text-zinc-500"
-        />
+      <div className="space-y-6">
+        {/* Filters row */}
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <input
+                value={formQ}
+                onChange={(e) => setFormQ(e.target.value)}
+                placeholder="Search by title..."
+                className="w-48 rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+              >
+                Search
+              </button>
+            </form>
 
-        <select
-          value={formDifficulty}
-          onChange={(e) => setFormDifficulty(e.target.value as Difficulty | "")}
-          className="rounded-md bg-zinc-900/50 px-3 py-2 text-sm text-white"
-        >
-          <option value="">All difficulties</option>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+            {/* Difficulty pills — no "All", click toggles on/off */}
+            <div className="flex items-center rounded-lg border border-border bg-surface p-0.5">
+              {DIFFICULTIES.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => handleDifficulty(d)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all duration-150 ${
+                    difficulty === d
+                      ? "bg-accent text-white shadow-sm"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
 
-        <select
-          value={formTag}
-          onChange={(e) => setFormTag(e.target.value)}
-          className="rounded-md bg-zinc-900/50 px-3 py-2 text-sm text-white"
-        >
-          <option value="">All tags</option>
-          {allTags.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-
-        <div className="flex items-center gap-2">
-          <label className="text-zinc-400">Per page:</label>
-          <select
-            value={formLimit}
-            onChange={(e) => setFormLimit(e.target.value)}
-            className="rounded-md bg-zinc-900/50 px-3 py-2 text-sm text-white"
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-          <button
-            type="submit"
-            className="ml-2 rounded-md bg-[#6aadfe] px-3 py-2 text-sm font-medium text-black"
-          >
-            Apply
-          </button>
-          <Link
-            href="/problems"
-            className="ml-2 rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-300"
-          >
-            Reset
-          </Link>
-        </div>
-      </form>
-
-      {/* Problems Table */}
-      <div className="overflow-hidden rounded-xl border border-zinc-800">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-zinc-800 bg-zinc-900/50">
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Difficulty
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Tags
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800">
-            {loading ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">
-                  Loading...
-                </td>
-              </tr>
-            ) : problemList.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">
-                  No problems found.
-                </td>
-              </tr>
-            ) : (
-              problemList.map((problem, index) => (
-                <tr key={problem.id} className="transition hover:bg-zinc-900/50">
-                  <td className="px-6 py-4 text-sm text-zinc-500">{from + index + 1}</td>
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/problems/${problem.slug}`}
-                      className="text-sm font-medium text-white transition hover:text-[#6aadfe]"
+            {/* Sort dropdown */}
+            <div ref={sortRef} className="relative">
+              <button
+                onClick={() => setSortOpen(!sortOpen)}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:border-accent/50"
+              >
+                <span className="text-muted">Sort:</span>
+                <span className="font-medium">{currentSortLabel}</span>
+                <svg
+                  className={`h-3.5 w-3.5 text-muted transition-transform duration-200 ${
+                    sortOrder === "desc" ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 15l7-7 7 7"
+                  />
+                </svg>
+              </button>
+              {sortOpen && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-44 rounded-lg border border-border bg-surface shadow-xl overflow-hidden">
+                  {sortOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleSort(opt.value)}
+                      className={`flex w-full items-center justify-between px-3 py-2.5 text-sm transition ${
+                        sortBy === opt.value
+                          ? "bg-accent/10 text-accent font-medium"
+                          : "text-foreground hover:bg-hover"
+                      }`}
                     >
-                      {problem.title}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4">
-                    <DifficultyBadge difficulty={problem.difficulty} />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {problem.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400"
+                      {opt.label}
+                      {sortBy === opt.value && (
+                        <svg
+                          className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                            sortOrder === "desc" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
                         >
-                          {t}
-                        </span>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 15l7-7 7 7"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reset (show only when filters active) */}
+            {(q || tagsParam || difficulty) && (
+              <Link
+                href="/problems"
+                className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:text-foreground hover:border-foreground/20"
+              >
+                Reset
+              </Link>
+            )}
+        </div>
+
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-12">
+          <div className="min-w-0 flex-1">
+            {/* Problems table */}
+            <div className="overflow-hidden rounded-xl border border-border">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-surface">
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                      #
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                      Title
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                      Difficulty
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                      Tags
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-6 py-12 text-center text-muted"
+                      >
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : problemList.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-6 py-12 text-center text-muted"
+                      >
+                        No problems found.
+                      </td>
+                    </tr>
+                  ) : (
+                    problemList.map((problem) => (
+                      <tr
+                        key={problem.id}
+                        className="transition hover:bg-hover"
+                      >
+                        <td className="px-6 py-4 text-sm font-mono text-muted">
+                          {problem.sort_order}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/problems/${problem.slug}`}
+                            className="text-sm font-medium text-foreground transition hover:text-accent"
+                          >
+                            {problem.title}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4">
+                          <DifficultyBadge difficulty={problem.difficulty} />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {problem.tags.map((t) => (
+                              <button
+                                key={t}
+                                onClick={() => toggleTag(t)}
+                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs transition ${
+                                  selectedTags.includes(t)
+                                    ? "bg-accent/15 text-accent"
+                                    : "bg-badge text-muted hover:text-foreground"
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Bottom bar: pagination + per-page */}
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-muted">
+                {loading
+                  ? "\u00A0"
+                  : `Showing ${startItem}\u2014${endItem} of ${total} problems`}
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Per page dropdown (styled like Sort) */}
+                <div ref={perPageRef} className="relative">
+                  <button
+                    onClick={() => setPerPageOpen(!perPageOpen)}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:border-accent/50"
+                  >
+                    <span className="text-muted">Per page:</span>
+                    <span className="font-medium">{limit}</span>
+                    <svg
+                      className={`h-3.5 w-3.5 text-muted transition-transform duration-200 ${
+                        perPageOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {perPageOpen && (
+                    <div className="absolute bottom-full left-0 z-50 mb-1 w-32 rounded-lg border border-border bg-surface shadow-xl overflow-hidden">
+                      {perPageOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => handleLimitChange(opt)}
+                          className={`flex w-full items-center px-3 py-2.5 text-sm transition ${
+                            String(limit) === opt
+                              ? "bg-accent/10 text-accent font-medium"
+                              : "text-foreground hover:bg-hover"
+                          }`}
+                        >
+                          {opt}
+                        </button>
                       ))}
                     </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  )}
+                </div>
 
-      {/* Pagination */}
-      <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-zinc-400">
-          {loading ? "\u00A0" : `Showing ${startItem}\u2014${endItem} of ${total} problems`}
-        </div>
+                <Link
+                  href={buildUrl({ page: Math.max(1, page - 1) })}
+                  className={`rounded-lg border border-border px-3 py-2 text-sm transition ${
+                    page === 1
+                      ? "opacity-50 pointer-events-none"
+                      : "hover:border-accent/50 text-foreground"
+                  }`}
+                >
+                  Previous
+                </Link>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href={buildUrl({ page: Math.max(1, page - 1) })}
-            className={`rounded-md px-3 py-2 text-sm ${page === 1 ? "opacity-50 pointer-events-none" : "bg-zinc-900/50"}`}
-          >
-            Previous
-          </Link>
+                <div className="text-sm text-muted">
+                  Page {page} of {totalPages}
+                </div>
 
-          <div className="text-sm text-zinc-300">Page {page} of {totalPages}</div>
+                <Link
+                  href={buildUrl({ page: Math.min(totalPages, page + 1) })}
+                  className={`rounded-lg border border-border px-3 py-2 text-sm transition ${
+                    page >= totalPages
+                      ? "opacity-50 pointer-events-none"
+                      : "hover:border-accent/50 text-foreground"
+                  }`}
+                >
+                  Next
+                </Link>
+              </div>
+            </div>
+          </div>
 
-          <Link
-            href={buildUrl({ page: Math.min(totalPages, page + 1) })}
-            className={`rounded-md px-3 py-2 text-sm ${page >= totalPages ? "opacity-50 pointer-events-none" : "bg-zinc-900/50"}`}
-          >
-            Next
-          </Link>
+          {/* Tag selector on the right, centered vertically */}
+          <aside className="w-full lg:w-56 shrink-0 lg:self-start lg:ml-4">
+            <div className="rounded-xl border border-border bg-surface/30 p-4">
+              <h3 className="mb-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">
+                Tags
+              </h3>
+              <div className="flex flex-wrap justify-center gap-1.5 lg:flex-col lg:justify-start">
+                {allTags.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-lg px-3 py-1.5 text-left text-sm transition-all duration-150 ${
+                        isSelected
+                          ? "bg-accent/15 text-accent font-medium ring-1 ring-accent/30"
+                          : "text-muted hover:bg-hover hover:text-foreground"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
