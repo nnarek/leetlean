@@ -27,7 +27,7 @@ export default function ProblemsClient() {
     [tagsParam]
   );
   const difficulty = (searchParams.get("difficulty") ?? "") as Difficulty | "";
-  const limit = Math.min(100, Number(searchParams.get("limit") ?? 10) || 10);
+  const limit = Math.min(100, Number(searchParams.get("limit") ?? 15) || 15);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
   const sortBy = (searchParams.get("sortBy") ?? "sort_order") as SortField;
   const sortOrder = (searchParams.get("sortOrder") ?? "asc") as SortOrder;
@@ -178,155 +178,143 @@ export default function ProblemsClient() {
     { value: "title", label: "Name" },
   ];
 
-  const perPageOptions = ["5", "10", "20", "50"];
+  const perPageOptions = ["5", "10", "15", "20", "50"];
   const currentSortLabel = sortOptions.find((o) => o.value === sortBy)?.label;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Problems</h1>
-      </div>
-
-      <div className="space-y-6">
-        {/* Filters row */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-            {/* Search */}
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <input
-                value={formQ}
-                onChange={(e) => setFormQ(e.target.value)}
-                placeholder="Search by title..."
-                className="w-48 rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
-              />
-              <button
-                type="submit"
-                className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-              >
-                Search
-              </button>
-            </form>
-
-            {/* Difficulty pills — no "All", click toggles on/off */}
-            <div className="flex items-center rounded-lg border border-border bg-surface p-0.5">
-              {DIFFICULTIES.map((d) => (
+    <div className="mx-auto max-w-[90rem] px-4 pt-6 pb-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
+          <div className="min-w-0 flex-1">
+            {/* Filters row — scoped to table column width */}
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              {/* Search */}
+              <form onSubmit={handleSearch} className="flex flex-1 min-w-0 items-center gap-2">
+                <input
+                  value={formQ}
+                  onChange={(e) => setFormQ(e.target.value)}
+                  placeholder="Search by title..."
+                  className="flex-1 min-w-0 rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition"
+                />
                 <button
-                  key={d}
-                  onClick={() => handleDifficulty(d)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all duration-150 ${
-                    difficulty === d
-                      ? "bg-accent text-white shadow-sm"
-                      : "text-muted hover:text-foreground"
-                  }`}
+                  type="submit"
+                  className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
                 >
-                  {d}
+                  Search
                 </button>
-              ))}
-            </div>
+              </form>
 
-            {/* Sort dropdown */}
-            <div ref={sortRef} className="relative">
-              <button
-                onClick={() => setSortOpen(!sortOpen)}
-                className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:border-accent/50"
-              >
-                <span className="text-muted">Sort:</span>
-                <span className="font-medium">{currentSortLabel}</span>
-                <svg
-                  className={`h-3.5 w-3.5 text-muted transition-transform duration-200 ${
-                    sortOrder === "desc" ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
+              {/* Difficulty pills */}
+              <div className="flex items-center rounded-lg border border-border bg-surface p-0.5">
+                {DIFFICULTIES.map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => handleDifficulty(d)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all duration-150 ${
+                      difficulty === d
+                        ? "bg-accent text-white shadow-sm"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort dropdown */}
+              <div ref={sortRef} className="relative">
+                <button
+                  onClick={() => setSortOpen(!sortOpen)}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:border-accent/50"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 15l7-7 7 7"
-                  />
-                </svg>
-              </button>
-              {sortOpen && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-44 rounded-lg border border-border bg-surface shadow-xl overflow-hidden">
-                  {sortOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSort(opt.value)}
-                      className={`flex w-full items-center justify-between px-3 py-2.5 text-sm transition ${
-                        sortBy === opt.value
-                          ? "bg-accent/10 text-accent font-medium"
-                          : "text-foreground hover:bg-hover"
-                      }`}
-                    >
-                      {opt.label}
-                      {sortBy === opt.value && (
-                        <svg
-                          className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                            sortOrder === "desc" ? "rotate-180" : ""
-                          }`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2.5}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                  <span className="text-muted">Sort:</span>
+                  <span className="font-medium">{currentSortLabel}</span>
+                  <svg
+                    className={`h-3.5 w-3.5 text-muted transition-transform duration-200 ${
+                      sortOrder === "desc" ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </button>
+                {sortOpen && (
+                  <div className="absolute top-full left-0 z-50 mt-1 w-44 rounded-lg border border-border bg-surface shadow-xl overflow-hidden">
+                    {sortOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleSort(opt.value)}
+                        className={`flex w-full items-center justify-between px-3 py-2.5 text-sm transition ${
+                          sortBy === opt.value
+                            ? "bg-accent/10 text-accent font-medium"
+                            : "text-foreground hover:bg-hover"
+                        }`}
+                      >
+                        {opt.label}
+                        {sortBy === opt.value && (
+                          <svg
+                            className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                              sortOrder === "desc" ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 15l7-7 7 7"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Reset (show only when filters active) */}
+              {(q || tagsParam || difficulty) && (
+                <Link
+                  href="/problems"
+                  className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:text-foreground hover:border-foreground/20"
+                >
+                  Reset
+                </Link>
               )}
             </div>
 
-            {/* Reset (show only when filters active) */}
-            {(q || tagsParam || difficulty) && (
-              <Link
-                href="/problems"
-                className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:text-foreground hover:border-foreground/20"
-              >
-                Reset
-              </Link>
-            )}
-        </div>
-
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-12">
-          <div className="min-w-0 flex-1">
             {/* Problems table */}
-            <div className="overflow-hidden rounded-xl border border-border">
+            <div className="relative overflow-hidden rounded-xl border border-border">
+              {loading && problemList.length > 0 && (
+                <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-[1px]" />
+              )}
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-surface">
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       Difficulty
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">
+                    <th className="px-6 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       Tags
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {loading ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-6 py-12 text-center text-muted"
-                      >
-                        Loading...
-                      </td>
-                    </tr>
-                  ) : problemList.length === 0 ? (
+                  {!loading && problemList.length === 0 ? (
                     <tr>
                       <td
                         colSpan={4}
@@ -341,10 +329,10 @@ export default function ProblemsClient() {
                         key={problem.id}
                         className="transition hover:bg-hover"
                       >
-                        <td className="px-6 py-4 text-sm font-mono text-muted">
+                        <td className="px-6 py-2.5 text-sm font-mono text-muted">
                           {problem.sort_order}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-2.5">
                           <Link
                             href={`/problems/${problem.slug}`}
                             className="text-sm font-medium text-foreground transition hover:text-accent"
@@ -352,10 +340,10 @@ export default function ProblemsClient() {
                             {problem.title}
                           </Link>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-2.5">
                           <DifficultyBadge difficulty={problem.difficulty} />
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-2.5">
                           <div className="flex flex-wrap gap-1">
                             {problem.tags.map((t) => (
                               <button
@@ -460,23 +448,23 @@ export default function ProblemsClient() {
             </div>
           </div>
 
-          {/* Tag selector on the right, centered vertically */}
-          <aside className="w-full lg:w-56 shrink-0 lg:self-start lg:ml-4">
+          {/* Tag selector on the right */}
+          <aside className="w-full lg:w-56 shrink-0 lg:self-start lg:mt-[3.25rem]">
             <div className="rounded-xl border border-border bg-surface/30 p-4">
               <h3 className="mb-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">
                 Tags
               </h3>
-              <div className="flex flex-wrap justify-center gap-1.5 lg:flex-col lg:justify-start">
+              <div className="flex flex-wrap gap-1.5">
                 {allTags.map((tag) => {
                   const isSelected = selectedTags.includes(tag);
                   return (
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-lg px-3 py-1.5 text-left text-sm transition-all duration-150 ${
+                      className={`rounded-md border px-2.5 py-1 text-sm transition-all duration-150 ${
                         isSelected
-                          ? "bg-accent/15 text-accent font-medium ring-1 ring-accent/30"
-                          : "text-muted hover:bg-hover hover:text-foreground"
+                          ? "border-accent/40 bg-accent/15 text-accent font-medium"
+                          : "border-border text-muted hover:bg-hover hover:text-foreground"
                       }`}
                     >
                       {tag}
@@ -487,7 +475,6 @@ export default function ProblemsClient() {
             </div>
           </aside>
         </div>
-      </div>
     </div>
   );
 }
