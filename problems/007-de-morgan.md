@@ -4,6 +4,7 @@ title: "De Morgan's Law"
 difficulty: "medium"
 tags: ["logic", "negation", "classical"]
 sort_order: 7
+main_theorem_name: "de_morgan"
 starter_code: |
   -- Prove one direction of De Morgan's Law.
   -- ¬(P ∨ Q) → ¬P ∧ ¬Q

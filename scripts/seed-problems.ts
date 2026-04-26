@@ -146,6 +146,41 @@ function getProjectRef(): string {
 }
 
 /**
+ * Run migration files beyond 001 (incremental schema updates).
+ * Each migration is idempotent, so it's safe to re-run.
+ */
+async function runAdditionalMigrations(): Promise<void> {
+  const migrationFiles = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".sql") && f !== "001_initial_schema.sql")
+    .sort();
+
+  if (migrationFiles.length === 0) return;
+
+  for (const file of migrationFiles) {
+    const filePath = path.join(MIGRATIONS_DIR, file);
+    const sql = fs.readFileSync(filePath, "utf-8");
+
+    console.log(`📦 Running migration: ${file}`);
+
+    let success = await runMigrationViaManagementAPI(sql);
+    if (!success) {
+      success = await runMigrationViaPg(sql);
+    }
+
+    if (success) {
+      console.log(`   ✅ ${file} applied.\n`);
+    } else {
+      console.error(`   ⚠️  Could not apply ${file} automatically.`);
+      console.error(`   Please run it manually in the Supabase SQL Editor.\n`);
+    }
+  }
+
+  // Wait for PostgREST schema cache to refresh
+  await new Promise((r) => setTimeout(r, 2000));
+}
+
+/**
  * Ensure the required database tables exist by checking and running migration.
  */
 async function ensureTablesExist(): Promise<void> {
@@ -157,6 +192,8 @@ async function ensureTablesExist(): Promise<void> {
 
   if (!error) {
     console.log("✅ Database tables already exist.\n");
+    // Run any additional migrations (002+)
+    await runAdditionalMigrations();
     return;
   }
 
@@ -242,6 +279,7 @@ interface ProblemFrontmatter {
   tags: string[];
   sort_order: number;
   starter_code: string;
+  main_theorem_name: string;
 }
 
 async function main() {
@@ -294,6 +332,7 @@ async function main() {
       starter_code: (frontmatter.starter_code || "").trim(),
       tags: frontmatter.tags || [],
       sort_order: frontmatter.sort_order || 0,
+      main_theorem_name: frontmatter.main_theorem_name || null,
     };
 
     // Upsert: insert or update if slug already exists

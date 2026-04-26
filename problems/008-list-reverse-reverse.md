@@ -4,6 +4,7 @@ title: "List Reverse Reverse"
 difficulty: "hard"
 tags: ["lists", "induction", "program-verification"]
 sort_order: 8
+main_theorem_name: "reverse_reverse"
 starter_code: |
   -- Prove that reversing a list twice gives back the original list.
   -- You may need helper lemmas about reverse and append.

@@ -4,6 +4,7 @@ title: "And Introduction"
 difficulty: "easy"
 tags: ["logic", "and", "tactics"]
 sort_order: 2
+main_theorem_name: "and_intro"
 starter_code: |
   -- Prove that if P and Q are both true, then P ∧ Q is true.
 

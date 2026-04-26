@@ -8,11 +8,14 @@ import * as monaco from 'monaco-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Split from 'react-split';
 
-import { codeAtom } from '@/lib/lean4web/editor/code-atoms';
+import { codeAtom, loadCodeForProblem, saveCodeForProblem, clearCodeForProblem } from '@/lib/lean4web/editor/code-atoms';
 import { mobileAtom, settingsAtom } from '@/lib/lean4web/settings/settings-atoms';
 import { SettingsPopup } from '@/lib/lean4web/settings/SettingsPopup';
 import { screenWidthAtom } from '@/lib/lean4web/store/window-atoms';
 import { save } from '@/lib/lean4web/utils/SaveToFile';
+import { verifyProof } from '@/lib/lean-verify';
+import { useAuth } from '@/hooks/useAuth';
+import { createClient } from '@/lib/supabase/client';
 import type { Theme } from '@/lib/lean4web/settings/settings-types';
 
 const WSS_URL = 'wss://live.lean-lang.org/websocket/MathlibDemo';
@@ -20,12 +23,15 @@ const PROJECT_FOLDER = 'MathlibDemo';
 
 interface Lean4EditorInnerProps {
   code?: string;
+  problemId?: string;
+  problemSlug?: string;
+  mainTheoremName?: string;
 }
 
-export default function Lean4EditorInner({ code: initialCode }: Lean4EditorInnerProps) {
+export default function Lean4EditorInner({ code: initialCode, problemId, problemSlug, mainTheoremName }: Lean4EditorInnerProps) {
   return (
     <Provider>
-      <Lean4EditorCore initialCode={initialCode} />
+      <Lean4EditorCore initialCode={initialCode} problemId={problemId} problemSlug={problemSlug} mainTheoremName={mainTheoremName} />
     </Provider>
   );
 }
@@ -58,7 +64,7 @@ function buildVSCodeOptions(settings: { theme: string; wordWrap: boolean; accept
   };
 }
 
-function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
+function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName }: { initialCode?: string; problemId?: string; problemSlug?: string; mainTheoremName?: string }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const infoviewRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -69,6 +75,13 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
   const [, setScreenWidth] = useAtom(screenWidthAtom);
   const [code, setCode] = useAtom(codeAtom);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { user } = useAuth();
+
+  // Storage key for per-problem caching
+  const storageId = problemId || problemSlug || '';
+  console.debug('[LeetLean] Lean4EditorCore mounted', { problemId, problemSlug, storageId });
 
   // Sync theme from host app (data-theme attribute) → settings atom
   useEffect(() => {
@@ -112,8 +125,8 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
         });
         if (disposed) return;
 
-        // Use localStorage code if present, otherwise use prop
-        const savedCode = code;
+        // Load per-problem saved code, fall back to starter code
+        const savedCode = storageId ? loadCodeForProblem(storageId) : '';
         const codeToUse = savedCode || initialCode || '';
 
         const fileName = `${PROJECT_FOLDER}/${PROJECT_FOLDER}.lean`;
@@ -121,11 +134,14 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
         if (disposed) return;
 
         setEditor(_leanMonacoEditor.editor);
+        setCode(codeToUse);
         leanMonacoRef.current = _leanMonaco;
 
-        // Keep code atom in sync with editor changes
+        // Keep code atom + per-problem localStorage in sync with editor changes
         _leanMonacoEditor.editor?.onDidChangeModelContent(() => {
-          setCode(_leanMonacoEditor.editor?.getModel()?.getValue()!);
+          const val = _leanMonacoEditor.editor?.getModel()?.getValue() ?? '';
+          setCode(val);
+          if (storageId) saveCodeForProblem(storageId, val);
         });
 
         // Go-to-definition: open docs link
@@ -226,6 +242,72 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
     return `https://live.lean-lang.org/#code=${encoded}`;
   })();
 
+  // Reset code to starter code
+  const handleReset = useCallback(() => {
+    if (!editor) return;
+    if (!window.confirm('Reset code to the starter code? Your changes will be lost.')) return;
+    const starter = initialCode || '';
+    editor.getModel()?.setValue(starter);
+    setCode(starter);
+    if (storageId) clearCodeForProblem(storageId);
+  }, [editor, initialCode, setCode, storageId]);
+
+  // Handle proof submission (auto-name, no prompt)
+  const handleSubmit = useCallback(async () => {
+    if (!user) {
+      setSubmitMessage({ type: 'error', text: 'Please sign in to submit your proof.' });
+      return;
+    }
+    if (!problemId || !mainTheoremName) {
+      setSubmitMessage({ type: 'error', text: 'Problem data not available.' });
+      return;
+    }
+    if (!editor) {
+      setSubmitMessage({ type: 'error', text: 'Editor not ready.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitMessage(null);
+
+    try {
+      const result = await verifyProof(editor, mainTheoremName);
+
+      const supabase = createClient();
+      const currentCode = editor.getModel()?.getValue() || '';
+
+      // Count existing submissions to auto-generate name
+      const { count } = await supabase
+        .from('submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('problem_id', problemId)
+        .eq('user_id', user.id);
+      const nextNum = (count ?? 0) + 1;
+      const autoName = `Submission ${nextNum}`;
+
+      const status = result.valid ? 'accepted' : 'wrong';
+      const { error } = await supabase.from('submissions').insert({
+        user_id: user.id,
+        problem_id: problemId,
+        code: currentCode,
+        status,
+        name: autoName,
+      });
+
+      if (error) {
+        setSubmitMessage({ type: 'error', text: `Failed to save: ${error.message}` });
+      } else if (result.valid) {
+        setSubmitMessage({ type: 'success', text: 'Proof accepted!' });
+      } else {
+        setSubmitMessage({ type: 'error', text: result.error || 'Proof rejected.' });
+      }
+    } catch (err) {
+      setSubmitMessage({ type: 'error', text: `Verification failed: ${err instanceof Error ? err.message : String(err)}` });
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user, problemId, mainTheoremName, editor]);
+
   return (
     <div className="lean4web-root monaco-editor">
       {/* Toolbar */}
@@ -243,7 +325,41 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
         <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--foreground)' }}>
           Lean 4 Editor
         </span>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {problemId && mainTheoremName && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              style={{
+                background: submitting ? 'var(--muted)' : 'var(--accent, #3b82f6)',
+                border: 'none',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                fontSize: '0.75rem',
+                color: '#fff',
+                padding: '4px 12px',
+                borderRadius: '4px',
+                fontWeight: 600,
+              }}
+              title={user ? 'Submit your proof for verification' : 'Sign in to submit'}
+            >
+              {submitting ? 'Verifying...' : 'Submit'}
+            </button>
+          )}
+          <button
+            onClick={handleReset}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+              color: 'var(--muted)',
+              padding: '2px 8px',
+              borderRadius: '4px',
+            }}
+            title="Reset to starter code"
+          >
+            Reset
+          </button>
           <button
             onClick={() => leanMonacoRef.current?.restart()}
             style={{
@@ -288,6 +404,31 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
           </a>
         </div>
       </div>
+
+      {/* Submit status message */}
+      {submitMessage && (
+        <div
+          style={{
+            padding: '6px 12px',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            backgroundColor: submitMessage.type === 'success' ? 'var(--success-bg, #d1fae5)' : 'var(--error-bg, #fee2e2)',
+            color: submitMessage.type === 'success' ? 'var(--success-fg, #065f46)' : 'var(--error-fg, #991b1b)',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>{submitMessage.text}</span>
+          <button
+            onClick={() => setSubmitMessage(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'inherit' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Editor + Infoview split */}
       <Split
