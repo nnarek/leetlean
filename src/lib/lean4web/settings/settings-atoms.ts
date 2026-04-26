@@ -5,15 +5,29 @@ import { atom } from 'jotai/vanilla'
 
 import { screenWidthAtom } from '../store/window-atoms'
 import { cleanObject } from '../utils/cleanObject'
-import { defaultSettings, PartialUserSettings, Settings } from './settings-types'
+import { defaultSettings, PartialUserSettings, Settings, type Theme } from './settings-types'
+
+/** Get the theme that matches the host app's data-theme attribute */
+function getHostThemeForSettings(): Theme {
+  if (typeof window === 'undefined') return defaultSettings.theme
+  const hostTheme = document.documentElement.getAttribute('data-theme')
+  return hostTheme === 'light' ? 'Visual Studio Light' : 'Visual Studio Dark'
+}
 
 /** User settings as they are stored in storage */
 const settingsStoreAtom = atomWithStorage<PartialUserSettings>('lean4web:settings', {}, undefined, {
   getOnInit: true,
 })
 
-/** The settings which apply for the current session */
-const settingsBaseAtom = atom<Settings>({ saved: false, inUrl: false, ...defaultSettings })
+/** The settings which apply for the current session
+ * LEETLEAN: Initialize theme from host app's data-theme attribute, not hardcoded default
+ */
+const settingsBaseAtom = atom<Settings>({
+  saved: false,
+  inUrl: false,
+  ...defaultSettings,
+  theme: getHostThemeForSettings(),
+})
 
 /**
  * The user settings combined from different sources, with decreasing priority:
