@@ -3,7 +3,7 @@
 import '@/lib/lean4web/css/lean4web.css';
 
 import { Provider, useAtom } from 'jotai';
-import { LeanMonaco, LeanMonacoEditor, LeanMonacoOptions } from 'lean4monaco';
+import { LeanMonaco, LeanMonacoEditor } from 'lean4monaco';
 import * as monaco from 'monaco-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Split from 'react-split';
@@ -11,9 +11,9 @@ import Split from 'react-split';
 import { codeAtom } from '@/lib/lean4web/editor/code-atoms';
 import { mobileAtom, settingsAtom } from '@/lib/lean4web/settings/settings-atoms';
 import { SettingsPopup } from '@/lib/lean4web/settings/SettingsPopup';
-import { lightThemes } from '@/lib/lean4web/settings/settings-types';
 import { screenWidthAtom } from '@/lib/lean4web/store/window-atoms';
 import { save } from '@/lib/lean4web/utils/SaveToFile';
+import type { Theme } from '@/lib/lean4web/settings/settings-types';
 
 const WSS_URL = 'wss://live.lean-lang.org/websocket/MathlibDemo';
 const PROJECT_FOLDER = 'MathlibDemo';
@@ -30,20 +30,59 @@ export default function Lean4EditorInner({ code: initialCode }: Lean4EditorInner
   );
 }
 
+/** Read host app theme from data-theme attribute */
+function getHostTheme(): 'light' | 'dark' {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+/** Map host theme to Monaco theme name */
+function hostThemeToMonaco(hostTheme: 'light' | 'dark'): Theme {
+  return hostTheme === 'light' ? 'Visual Studio Light' : 'Visual Studio Dark';
+}
+
+function buildVSCodeOptions(settings: { theme: string; wordWrap: boolean; acceptSuggestionOnEnter: boolean; showGoalNames: boolean; showExpectedType: boolean; abbreviationCharacter: string }) {
+  return {
+    'workbench.colorTheme': settings.theme,
+    'editor.tabSize': 2,
+    'editor.lightbulb.enabled': 'on',
+    'editor.wordWrap': settings.wordWrap ? 'on' : 'off',
+    'editor.wrappingStrategy': 'advanced',
+    'editor.semanticHighlighting.enabled': true,
+    'editor.acceptSuggestionOnEnter': settings.acceptSuggestionOnEnter ? 'on' : 'off',
+    'lean4.input.eagerReplacementEnabled': true,
+    'lean4.infoview.showGoalNames': settings.showGoalNames,
+    'lean4.infoview.emphasizeFirstGoal': true,
+    'lean4.infoview.showExpectedType': settings.showExpectedType,
+    'lean4.infoview.showTooltipOnHover': false,
+    'lean4.input.leader': settings.abbreviationCharacter,
+  };
+}
+
 function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const infoviewRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor>();
-  const [leanMonaco, setLeanMonaco] = useState<LeanMonaco>();
-  const [settings] = useAtom(settingsAtom);
+  const leanMonacoRef = useRef<LeanMonaco | null>(null);
+  const [settings, applySettings] = useAtom(settingsAtom);
   const [mobile] = useAtom(mobileAtom);
   const [, setScreenWidth] = useAtom(screenWidthAtom);
   const [code, setCode] = useAtom(codeAtom);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Track whether we've set the initial code from props
-  const initialCodeSetRef = useRef(false);
+  // Sync theme from host app (data-theme attribute) → settings atom
+  useEffect(() => {
+    const syncTheme = () => {
+      const monacoTheme = hostThemeToMonaco(getHostTheme());
+      if (settings.theme !== monacoTheme) {
+        applySettings({ ...settings, theme: monacoTheme });
+      }
+    };
+    syncTheme();
+    const obs = new MutationObserver(syncTheme);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
+  }, [settings, applySettings]);
 
   // Save screen width for mobile detection
   useEffect(() => {
@@ -52,99 +91,88 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
     return () => window.removeEventListener('resize', handleResize);
   }, [setScreenWidth]);
 
-  // Build LeanMonaco options
-  const [options, setOptions] = useState<LeanMonacoOptions>({
-    websocket: { url: '' },
-  });
-
+  // Initialize Monaco + LeanMonaco ONCE (does not depend on settings)
   useEffect(() => {
-    console.log('[LeetLean] Update lean4monaco options');
-    const _options: LeanMonacoOptions = {
-      websocket: { url: WSS_URL },
-      htmlElement: editorRef.current ?? undefined,
-      vscode: {
-        'workbench.colorTheme': settings.theme,
-        'editor.tabSize': 2,
-        'editor.lightbulb.enabled': 'on',
-        'editor.wordWrap': settings.wordWrap ? 'on' : 'off',
-        'editor.wrappingStrategy': 'advanced',
-        'editor.semanticHighlighting.enabled': true,
-        'editor.acceptSuggestionOnEnter': settings.acceptSuggestionOnEnter ? 'on' : 'off',
-        'lean4.input.eagerReplacementEnabled': true,
-        'lean4.infoview.showGoalNames': settings.showGoalNames,
-        'lean4.infoview.emphasizeFirstGoal': true,
-        'lean4.infoview.showExpectedType': settings.showExpectedType,
-        'lean4.infoview.showTooltipOnHover': false,
-        'lean4.input.leader': settings.abbreviationCharacter,
-      },
-    };
-    setOptions(_options);
-  }, [editorRef, settings]);
-
-  // Initialize Monaco + LeanMonaco
-  useEffect(() => {
-    if (!options.websocket.url) return;
+    if (!editorRef.current || !infoviewRef.current) return;
 
     console.debug('[LeetLean] Starting editor');
     const _leanMonaco = new LeanMonaco();
     const _leanMonacoEditor = new LeanMonacoEditor();
 
-    _leanMonaco.setInfoviewElement(infoviewRef.current!);
+    _leanMonaco.setInfoviewElement(infoviewRef.current);
+
+    let disposed = false;
 
     (async () => {
-      await _leanMonaco.start(options);
+      try {
+        await _leanMonaco.start({
+          websocket: { url: WSS_URL },
+          htmlElement: editorRef.current ?? undefined,
+          vscode: buildVSCodeOptions(settings),
+        });
+        if (disposed) return;
 
-      // Determine initial code: use URL hash code if present, otherwise use prop
-      const editorCode = code || initialCode || '';
-      // If no code in URL hash yet, and we have initialCode from props, use that
-      const codeToUse = (!initialCodeSetRef.current && !code && initialCode)
-        ? initialCode
-        : (code || initialCode || '');
-      initialCodeSetRef.current = true;
+        // Use localStorage code if present, otherwise use prop
+        const savedCode = code;
+        const codeToUse = savedCode || initialCode || '';
 
-      const fileName = `${PROJECT_FOLDER}/${PROJECT_FOLDER}.lean`;
-      await _leanMonacoEditor.start(editorRef.current!, fileName, codeToUse);
+        const fileName = `${PROJECT_FOLDER}/${PROJECT_FOLDER}.lean`;
+        await _leanMonacoEditor.start(editorRef.current!, fileName, codeToUse);
+        if (disposed) return;
 
-      setEditor(_leanMonacoEditor.editor);
-      setLeanMonaco(_leanMonaco);
+        setEditor(_leanMonacoEditor.editor);
+        leanMonacoRef.current = _leanMonaco;
 
-      // Keep code atom in sync with editor changes
-      _leanMonacoEditor.editor?.onDidChangeModelContent(() => {
-        setCode(_leanMonacoEditor.editor?.getModel()?.getValue()!);
-      });
+        // Keep code atom in sync with editor changes
+        _leanMonacoEditor.editor?.onDidChangeModelContent(() => {
+          setCode(_leanMonacoEditor.editor?.getModel()?.getValue()!);
+        });
 
-      // Go-to-definition: open docs link
-      const editorService = (_leanMonacoEditor.editor as any)?._codeEditorService;
-      if (editorService) {
-        const openEditorBase = editorService.openCodeEditor.bind(editorService);
-        editorService.openCodeEditor = async (input: any, source: any) => {
-          const result = await openEditorBase(input, source);
-          if (result === null) {
-            let path = input.resource.path
-              .replace(new RegExp('^.*/(?:lean|\.lake/packages/[^/]+/)'), '')
-              .replace(new RegExp('\.lean$'), '');
-            if (
-              window.confirm(
-                `Do you want to open the docs?\n\n${path} (line ${input.options.selection.startLineNumber})`,
-              )
-            ) {
-              const newTab = window.open(
-                `https://leanprover-community.github.io/mathlib4_docs/${path}.html`,
-                '_blank',
-              );
-              newTab?.focus();
+        // Go-to-definition: open docs link
+        const editorService = (_leanMonacoEditor.editor as any)?._codeEditorService;
+        if (editorService) {
+          const openEditorBase = editorService.openCodeEditor.bind(editorService);
+          editorService.openCodeEditor = async (input: any, source: any) => {
+            const result = await openEditorBase(input, source);
+            if (result === null) {
+              let path = input.resource.path
+                .replace(new RegExp('^.*/(?:lean|\.lake/packages/[^/]+/)'), '')
+                .replace(new RegExp('\.lean$'), '');
+              if (
+                window.confirm(
+                  `Do you want to open the docs?\n\n${path} (line ${input.options.selection.startLineNumber})`,
+                )
+              ) {
+                const newTab = window.open(
+                  `https://leanprover-community.github.io/mathlib4_docs/${path}.html`,
+                  '_blank',
+                );
+                newTab?.focus();
+              }
             }
-          }
-          return null;
-        };
+            return null;
+          };
+        }
+      } catch (err) {
+        console.error('[LeetLean] Editor initialization error:', err);
       }
     })();
 
     return () => {
+      disposed = true;
+      leanMonacoRef.current = null;
       _leanMonacoEditor.dispose();
       _leanMonaco.dispose();
     };
-  }, [infoviewRef, editorRef, options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run once on mount
+  }, []);
+
+  // Update VSCode options when settings change (without restarting editor)
+  useEffect(() => {
+    if (leanMonacoRef.current) {
+      leanMonacoRef.current.updateVSCodeOptions(buildVSCodeOptions(settings));
+    }
+  }, [settings]);
 
   // Ctrl+S: save file
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -190,6 +218,14 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
     };
   }, []);
 
+  // Build "Open in new tab" URL
+  const openInNewTabUrl = (() => {
+    const currentCode = code || initialCode || '';
+    if (!currentCode) return 'https://live.lean-lang.org';
+    const encoded = encodeURIComponent(currentCode);
+    return `https://live.lean-lang.org/#code=${encoded}`;
+  })();
+
   return (
     <div className="lean4web-root monaco-editor">
       {/* Toolbar */}
@@ -209,7 +245,7 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
         </span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button
-            onClick={() => leanMonaco?.restart()}
+            onClick={() => leanMonacoRef.current?.restart()}
             style={{
               background: 'none',
               border: 'none',
@@ -236,6 +272,20 @@ function Lean4EditorCore({ initialCode }: { initialCode?: string }) {
           >
             Settings
           </button>
+          <a
+            href={openInNewTabUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--muted)',
+              textDecoration: 'none',
+              padding: '2px 6px',
+            }}
+            title="Open in lean4web"
+          >
+            Open in new tab ↗
+          </a>
         </div>
       </div>
 
