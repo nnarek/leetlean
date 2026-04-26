@@ -1,0 +1,368 @@
+/*
+ * lean4web CSS - scoped under .lean4web-root to avoid conflicts with host app.
+ * Combined from: App.css, Editor.css, Modal.css
+ * Source: https://github.com/leanprover-community/lean4web
+ */
+
+/* === App.css === */
+.lean4web-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.lean4web-root .lean4web-hidden {
+  display: none !important;
+}
+
+/* === Editor.css === */
+.lean4web-root .editor {
+  display: flex;
+  flex: 1;
+}
+
+.lean4web-root .codeview-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.lean4web-root .codeview {
+  height: 100%;
+  width: 100%;
+}
+
+.lean4web-root .infoview {
+  position: relative;
+  overflow: auto;
+}
+
+.lean4web-root .infoview iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.lean4web-root .gutter {
+  background-color: transparent;
+  box-shadow: inset -1px -1px var(--vscode-editorWidget-border);
+  background-repeat: no-repeat;
+  background-position: 50%;
+}
+
+.lean4web-root .gutter:hover,
+.lean4web-root .dragging .gutter {
+  background-color: var(--vscode-focusBorder);
+  box-shadow: none;
+  transition-delay: 0.3s;
+}
+
+/* Styling in the editor while typing abbreviations such as "\alpha" */
+.lean4web-root .abbreviation {
+  text-decoration: underline;
+}
+
+/* Styling in the left margin of the editor when processing */
+.lean4web-root .processing {
+  background: linear-gradient(
+    to right,
+    var(--vscode-editorOverviewRuler-warningForeground) 0%,
+    var(--vscode-editorOverviewRuler-warningForeground) 30%,
+    transparent 30%,
+    transparent 100%
+  );
+}
+
+/* Styling in the left margin of the editor on error */
+.lean4web-root .monaco-editor .glyph-margin-error {
+  background: linear-gradient(
+    to right,
+    var(--vscode-editorOverviewRuler-warningForeground) 0%,
+    var(--vscode-editorOverviewRuler-warningForeground) 30%,
+    transparent 30%,
+    transparent 100%
+  );
+}
+
+.lean4web-root code {
+  font-family: 'Source Code Pro', 'STIX Two Math', monospace;
+  color: var(--vscode-textPreformat-foreground);
+  background-color: var(--vscode-textPreformat-background);
+}
+
+/* Notification toasts */
+.lean4web-root .notification-toasts {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lean4web-root .notification-toasts .codicon[class*='codicon-'] {
+  font-size: 1.5em;
+}
+
+.lean4web-root .notification-toast-container {
+  z-index: 1000;
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+}
+
+.lean4web-root .notification-toast {
+  margin: 0.5em;
+  background: var(--vscode-notifications-background);
+  box-shadow: var(--vscode-widget-shadow) 0 0 0.5em 0.1em;
+  width: 60ch;
+  display: flex;
+  flex-direction: column;
+  padding: 0.7em 0.35em;
+}
+
+.lean4web-root .notification-row {
+  flex: 1;
+  display: flex;
+  padding-left: 0.3em;
+  margin: 0.3em 0;
+}
+
+.lean4web-root .notification-row-main {
+  flex: 1;
+  margin: 0.2em 0;
+  padding: 0.1em;
+}
+
+.lean4web-root .notification-icon-wrapper {
+  line-height: 0;
+  margin: 0 0.2em;
+  padding: 0.1em;
+}
+
+.lean4web-root .notification-icon {
+  color: var(--vscode-notificationsErrorIcon-foreground);
+}
+
+.lean4web-root .notification-toasts button {
+  border: none;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  cursor: pointer;
+  padding: 0.5em 1em;
+  border-radius: 0.2em;
+  display: inline-block;
+  margin: 0.2em 0.4em;
+}
+
+.lean4web-root .notification-toasts button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.lean4web-root .notification-close-wrapper {
+  cursor: pointer;
+  line-height: 0;
+  margin: 0 0.2em;
+  padding: 0.1em;
+}
+
+.lean4web-root .notification-close-wrapper:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-radius: 5px;
+}
+
+.lean4web-root .notification-close {
+  cursor: pointer;
+  display: flex;
+}
+
+/* === Modal.css === */
+.lean4web-root input[type='file'] {
+  display: none;
+}
+
+.lean4web-root .modal-wrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 0;
+  z-index: 100;
+}
+
+.lean4web-root .modal-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 101;
+}
+
+.lean4web-root .modal h2 {
+  text-align: center;
+}
+
+.lean4web-root .modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 50%;
+  max-width: 60ch;
+  max-height: 90%;
+  overflow-y: auto;
+  background: var(--vscode-input-background, #1e1e1e);
+  z-index: 102;
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--vscode-panel-border, #444);
+  text-align: left;
+  color: var(--vscode-input-foreground, #ccc);
+}
+
+@media only screen and (max-width: 800px) {
+  .lean4web-root .modal {
+    min-width: 90%;
+  }
+}
+
+.lean4web-root .modal input[type='text'],
+.lean4web-root .modal textarea {
+  width: 100%;
+}
+
+.lean4web-root .modal textarea {
+  height: 10em;
+}
+
+.lean4web-root .modal input[type='submit'],
+.lean4web-root .modal button {
+  color: var(--vscode-button-foreground, #fff);
+  background: var(--vscode-button-background, #0e639c);
+  border: 1px solid var(--vscode-button-border, transparent);
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 0.2rem;
+  display: block;
+  margin: 1rem auto;
+}
+
+.lean4web-root .modal input[type='text'],
+.lean4web-root .modal select {
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-dropdown-border, #444);
+  border-radius: 6px;
+  background-color: var(--vscode-input-background, #1e1e1e);
+  color: var(--vscode-input-foreground, #ccc);
+}
+
+.lean4web-root .modal input[type='text'] {
+  font-family: 'JuliaMono', monospace;
+}
+
+.lean4web-root .modal #abbreviationCharacter {
+  width: 15px;
+  margin-left: 4px;
+}
+
+.lean4web-root .modal-close {
+  float: right;
+  scale: 2;
+  color: var(--vscode-input-foreground, #ccc);
+  cursor: pointer;
+}
+
+.lean4web-root .modal-close:hover {
+  color: var(--vscode-inputOption-activeForeground, #fff);
+}
+
+.lean4web-root .modal a {
+  text-decoration: none;
+  color: var(--vscode-textLink-foreground, #3794ff);
+}
+
+/* === Custom toggle switch (replaces MUI Switch) === */
+.lean4web-root .lean4web-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lean4web-root .lean4web-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.lean4web-root .lean4web-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.lean4web-root .lean4web-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--vscode-input-background, #3c3c3c);
+  border: 1px solid var(--vscode-input-foreground, #666);
+  border-radius: 20px;
+  transition: 0.2s;
+}
+
+.lean4web-root .lean4web-toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--vscode-input-foreground, #ccc);
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.lean4web-root .lean4web-toggle input:checked + .lean4web-toggle-slider {
+  background-color: var(--vscode-button-background, #0e639c);
+  border-color: var(--vscode-button-background, #0e639c);
+}
+
+.lean4web-root .lean4web-toggle input:checked + .lean4web-toggle-slider:before {
+  transform: translateX(16px);
+  background-color: var(--vscode-button-foreground, #fff);
+}
+
+/* === Loading spinner === */
+.lean4web-root .loading-ring {
+  margin: auto;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+}
+
+.lean4web-root .loading-ring:after {
+  content: ' ';
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 6px solid #aaa;
+  border-color: #aaa transparent #aaa transparent;
+  animation: lean4web-loading-ring 1.2s linear infinite;
+}
+
+@keyframes lean4web-loading-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* JuliaMono font */
+@font-face {
+  font-family: 'JuliaMono';
+  src: local('JuliaMono'), url('/fonts/JuliaMono-Regular.ttf');
+}

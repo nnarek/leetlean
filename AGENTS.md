@@ -19,16 +19,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | Frontend | Next.js (App Router), TypeScript, Tailwind CSS v4 |
 | Backend/DB | Supabase (PostgreSQL, Auth, RLS) — **serverless, no custom server** |
 | Auth | Supabase Auth with Google OAuth |
-| Code Editor | [lean4web](https://github.com/leanprover-community/lean4web) embedded via iframe |
+| Code Editor | **lean4monaco** directly embedded (connects to live.lean-lang.org) |
 | Markdown | react-markdown + remark-gfm for problem descriptions |
 
 ## Key Architecture Decisions
 
-1. **No running backend server** — All data comes from Supabase (serverless Postgres + Auth). The only server that runs is the lean4web instance for the code editor.
-2. **lean4web via iframe** — The editor is embedded using URL hash params: `#code=<encoded_code>`. See `src/components/Lean4Editor.tsx`.
-3. **Problems stored in Supabase** — But authored as markdown files in `/problems/` with YAML frontmatter. A seed script (`scripts/seed-problems.ts`) loads them into the DB.
-4. **Row Level Security (RLS)** — Problems are public-read. Submissions are per-user. Profiles auto-created on signup.
-5. **Static-ish rendering** — Problems pages use `revalidate = 60` (ISR). Landing page is static.
+1. **No running backend server** — All data comes from Supabase (serverless Postgres + Auth). The code editor connects directly to the remote Lean server at `wss://live.lean-lang.org`.
+2. **lean4monaco embedded directly** — The editor uses the `lean4monaco` npm package which provides Monaco editor + Lean 4 LSP integration. No iframe. Code is persisted in browser `localStorage` (key: `leetlean:editor-code`). See `src/components/Lean4EditorInner.tsx`.
+3. **lean4web source files in `src/lib/lean4web/`** — Adapted lean4web components and utilities are in a separate directory for easy syncing with upstream [lean4web](https://github.com/leanprover-community/lean4web) changes.
+4. **Problems stored in Supabase** — But authored as markdown files in `/problems/` with YAML frontmatter. A seed script (`scripts/seed-problems.ts`) loads them into the DB.
+5. **Row Level Security (RLS)** — Problems are public-read. Submissions are per-user. Profiles auto-created on signup.
+6. **Static-ish rendering** — Problems pages use `revalidate = 60` (ISR). Landing page is static.
 
 ## Directory Structure
 
@@ -57,13 +58,21 @@ leetlean/
 │   │   ├── Navbar.tsx             # Navigation with Google sign-in
 │   │   ├── Footer.tsx             # Site footer
 │   │   ├── DifficultyBadge.tsx    # Easy/Medium/Hard badge
-│   │   ├── Lean4Editor.tsx        # lean4web iframe wrapper
+│   │   ├── Lean4Editor.tsx        # lean4monaco editor wrapper (dynamic import, ssr: false)
+│   │   ├── Lean4EditorInner.tsx   # Editor implementation with split pane
 │   │   └── MarkdownRenderer.tsx   # Renders markdown content
 │   ├── hooks/
 │   │   └── useAuth.ts            # Auth hook (signIn, signOut, user state)
-│   └── lib/
-│       ├── types.ts               # TypeScript types (Problem, Submission, etc.)
-│       └── supabase/
+│   ├── lib/
+│   │   ├── types.ts               # TypeScript types (Problem, Submission, etc.)
+│   │   ├── lean4web/              # Adapted lean4web frontend (keep synced with upstream)
+│   │   │   ├── editor/code-atoms.ts       # Code state → localStorage
+│   │   │   ├── settings/                  # Settings UI, types, atoms
+│   │   │   ├── store/                     # URL args, location, window state atoms
+│   │   │   ├── utils/                     # URL encoding, shallow equal, save-to-file
+│   │   │   ├── navigation/Popup.tsx       # Modal wrapper
+│   │   │   └── css/lean4web.css           # Scoped lean4web styles
+│   │   └── supabase/
 │           ├── client.ts          # Browser Supabase client
 │           ├── server.ts          # Server Supabase client
 │           └── middleware.ts      # Session refresh middleware
@@ -80,7 +89,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY — Supabase anonymous/public key
 SUPABASE_SERVICE_ROLE_KEY     — Supabase service role key (admin, for scripts only)
 DATABASE_URL                  — Postgres connection string (for seed script auto-migration)
                                 Get from: Supabase Dashboard → Settings → Database → Connection string (URI)
-NEXT_PUBLIC_LEAN4WEB_URL      — URL of lean4web instance (default: https://live.lean-lang.org)
 ```
 
 ## Database Schema
@@ -107,6 +115,7 @@ NEXT_PUBLIC_LEAN4WEB_URL      — URL of lean4web instance (default: https://liv
 
 ### Run locally
 ```bash
+npm install    # Automatically copies lean4web assets via postinstall hook
 npm run dev
 ```
 
@@ -121,13 +130,33 @@ For auto-migration, it tries these methods in order:
 2. **Direct Postgres** via `DATABASE_URL` in `.env.local`
 3. **Manual** — prints a link to the Supabase SQL Editor
 
-## Lean4Web Integration
+## Lean4 Editor Integration
 
-The editor embeds lean4web using an iframe with URL hash parameters:
-- `#code=<url_encoded_lean_code>` — pre-fills the editor
-- `#project=<name>` — selects the Lean project (if your server has multiple)
+The editor uses **lean4monaco** (from npm) which provides Monaco editor + Lean 4 LSP client.
 
-The component is at `src/components/Lean4Editor.tsx`.
+**Code persistence:**
+- Code is stored in browser `localStorage` with key `leetlean:editor-code`
+- Code persists across page refreshes without URL manipulation
+- User can open current code in live.lean-lang.org via "Open in new tab ↗" button
+
+**Theme sync:**
+- Editor theme automatically syncs with the app's `data-theme` attribute
+- Supports: Visual Studio Light/Dark, High Contrast, Cobalt
+- Theme can also be manually set via Settings popup
+
+**WebSocket connection:**
+- Hardcoded to `wss://live.lean-lang.org/websocket/MathlibDemo`
+- No custom Lean server needed (uses the public live.lean-lang.org instance)
+
+**Static assets:**
+- Run `npm run copy:lean-assets` to copy infoview files and fonts from `node_modules/` to `public/`
+- This happens automatically via `npm postinstall` script
+- See `scripts/copy-lean4web-assets.mjs`
+
+**Main components:**
+- `src/components/Lean4Editor.tsx` — Dynamic import wrapper (`ssr: false`)
+- `src/components/Lean4EditorInner.tsx` — Implementation with split pane (editor + infoview)
+- `src/lib/lean4web/` — Adapted lean4web frontend code (keep synced with upstream)
 
 ## Future Work Ideas
 

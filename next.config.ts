@@ -16,14 +16,22 @@ const nextConfig: NextConfig = {
   turbopack: {
     // When firebase provider is NOT selected, alias firebase packages to an
     // empty stub so the build doesn't fail if firebase isn't installed.
-    resolveAlias: isFirebase
-      ? {}
-      : {
-          "firebase/app": "@/lib/db/firebase-stub",
-          "firebase/firestore": "@/lib/db/firebase-stub",
-          "firebase/auth": "@/lib/db/firebase-stub",
-        },
+    resolveAlias: {
+      ...(isFirebase
+        ? {}
+        : {
+            "firebase/app": "@/lib/db/firebase-stub",
+            "firebase/firestore": "@/lib/db/firebase-stub",
+            "firebase/auth": "@/lib/db/firebase-stub",
+          }),
+      // lean4monaco uses Node.js modules in browser (same as vite-plugin-node-polyfills)
+      path: "path-browserify",
+      fs: "memfs",
+    },
   },
+
+  // lean4monaco / monaco-editor need transpilation for proper bundling
+  transpilePackages: ["lean4monaco"],
 
   // Webpack fallback (used with --webpack flag)
   webpack: (config) => {
@@ -35,6 +43,11 @@ const nextConfig: NextConfig = {
         "firebase/auth": false,
       };
     }
+    // lean4monaco uses Node.js `path` module in browser
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      path: require("path-browserify"),
+    };
     return config;
   },
 };
