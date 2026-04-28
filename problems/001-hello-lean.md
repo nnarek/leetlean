@@ -14,7 +14,6 @@ starter_code: |
     sorry
 ---
 
-# Hello, Lean!
  
 Welcome to your first LeetLean problem! This is a warmup to make sure you can use the editor.
 

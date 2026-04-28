@@ -324,7 +324,7 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
   }, [user, problemId, mainTheoremName, editor]);
 
   return (
-    <div className="lean4web-root monaco-editor">
+    <div className="lean4web-root monaco-workbench">
       {/* Toolbar */}
       <div
         style={{
