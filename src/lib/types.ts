@@ -31,6 +31,8 @@ export interface Submission {
   code: string;
   status: SubmissionStatus;
   name: string | null;
+  notes: string | null;
+  errors: string | null;
   submitted_at: string;
 }
 
@@ -50,7 +52,7 @@ export interface Solution {
 export interface SolutionWithMeta extends Solution {
   like_count: number;
   user_has_liked: boolean;
-  profiles: { full_name: string | null; avatar_url: string | null };
+  profiles: { full_name: string | null; avatar_url: string | null; email: string | null };
   submissions: { code: string; status: SubmissionStatus };
 }
 

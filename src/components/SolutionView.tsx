@@ -18,7 +18,9 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
   const { user } = useAuth();
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isPublic, setIsPublic] = useState(sol.is_public);
   const isOwner = user?.id === sol.user_id;
+  const username = sol.profiles.email?.split("@")[0] || "anonymous";
 
   const handleDelete = async () => {
     if (!window.confirm("Delete this solution? This cannot be undone.")) return;
@@ -31,12 +33,13 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
 
   const handleToggleVisibility = async () => {
     const supabase = createClient();
-    const newPublic = !sol.is_public;
+    const newPublic = !isPublic;
     const { error } = await supabase
       .from("solutions")
       .update({ is_public: newPublic })
       .eq("id", sol.id);
     if (!error) {
+      setIsPublic(newPublic);
       onUpdated();
     }
   };
@@ -55,12 +58,12 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
     return (
       <SolutionEditor
         problemId={sol.problem_id}
-        submission={{ id: sol.submission_id, user_id: sol.user_id, problem_id: sol.problem_id, code: sol.submissions.code, status: sol.submissions.status, name: null, submitted_at: "" }}
+        submission={{ id: sol.submission_id, user_id: sol.user_id, problem_id: sol.problem_id, code: sol.submissions.code, status: sol.submissions.status, name: null, notes: null, errors: null, submitted_at: "" }}
         existingSolution={{
           id: sol.id,
           title: sol.title,
           content: sol.content,
-          is_public: sol.is_public,
+          is_public: isPublic,
           tags: sol.tags,
         }}
         onCancel={() => setEditing(false)}
@@ -75,18 +78,33 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
 
   return (
     <div className="space-y-3">
-      {/* Navigation */}
+      {/* Top bar: back + upvote + actions */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="text-xs text-muted hover:text-accent transition-colors flex items-center gap-1"
+          className="vscode-menu-btn"
         >
           &larr; Solutions
         </button>
         <div className="flex items-center gap-2">
           <button
+            onClick={onLike}
+            disabled={!user}
+            className={`vscode-menu-btn ${
+              sol.user_has_liked
+                ? "!text-accent !bg-accent/10"
+                : ""
+            } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
+            title={user ? (sol.user_has_liked ? "Remove upvote" : "Upvote") : "Sign in to upvote"}
+          >
+            <svg className="h-3.5 w-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+            {sol.like_count}
+          </button>
+          <button
             onClick={handleCopyLink}
-            className="text-xs px-2 py-1 rounded border border-border text-muted hover:text-foreground hover:border-accent/50 transition-colors"
+            className="vscode-menu-btn"
           >
             {copied ? "Copied!" : "Copy Link"}
           </button>
@@ -94,19 +112,19 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
             <>
               <button
                 onClick={() => setEditing(true)}
-                className="text-xs px-2 py-1 rounded border border-border text-muted hover:text-foreground hover:border-accent/50 transition-colors"
+                className="vscode-menu-btn"
               >
                 Edit
               </button>
               <button
                 onClick={handleToggleVisibility}
-                className="text-xs px-2 py-1 rounded border border-border text-muted hover:text-foreground hover:border-accent/50 transition-colors"
+                className="vscode-menu-btn"
               >
-                {sol.is_public ? "Make Private" : "Make Public"}
+                {isPublic ? "Make Private" : "Make Public"}
               </button>
               <button
                 onClick={handleDelete}
-                className="text-xs px-2 py-1 rounded border border-border text-red-400/70 hover:text-red-400 hover:border-red-400/50 transition-colors"
+                className="vscode-menu-btn"
               >
                 Delete
               </button>
@@ -121,40 +139,24 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
       </h2>
 
       {/* Author + meta */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-foreground">
-            {sol.profiles.full_name || "Anonymous"}
+      <div className="flex items-center gap-2">
+        {sol.profiles.avatar_url ? (
+          <img src={sol.profiles.avatar_url} alt="" className="h-6 w-6 rounded-full" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="h-6 w-6 rounded-full bg-badge border border-border flex items-center justify-center">
+            <span className="text-[10px] text-muted">{username[0]?.toUpperCase()}</span>
+          </div>
+        )}
+        <span className="text-sm text-muted">
+          {username}
+        </span>
+        {isOwner && (
+          <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium border ${
+            isPublic ? "badge-success" : "badge-warning"
+          }`}>
+            {isPublic ? "Public" : "Private"}
           </span>
-          {isOwner && (
-            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${
-              sol.is_public
-                ? "bg-green-900/30 text-green-400 border border-green-400/20"
-                : "bg-yellow-900/30 text-yellow-400 border border-yellow-400/20"
-            }`}>
-              {sol.is_public ? "Public" : "Private"}
-            </span>
-          )}
-          <span className="text-xs text-muted">
-            {new Date(sol.created_at).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-        </div>
-        <button
-          onClick={onLike}
-          disabled={!user}
-          className={`flex items-center gap-1 px-2 py-1 rounded border text-xs transition-colors ${
-            sol.user_has_liked
-              ? "border-red-400/30 text-red-400 bg-red-400/10"
-              : "border-border text-muted hover:border-red-400/30 hover:text-red-400"
-          } ${!user ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-          title={user ? (sol.user_has_liked ? "Unlike" : "Like") : "Sign in to like"}
-        >
-          {sol.user_has_liked ? "\u2665" : "\u2661"} {sol.like_count}
-        </button>
+        )}
       </div>
 
       {/* Tags */}
@@ -163,7 +165,7 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
           {sol.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center rounded bg-badge px-2 py-0.5 text-[10px] text-muted border border-border"
+              className="inline-flex items-center rounded-md bg-badge px-2 py-0.5 text-xs text-muted"
             >
               {tag}
             </span>
@@ -172,24 +174,40 @@ export default function SolutionView({ solution: sol, onBack, onLike, onUpdated 
       )}
 
       {/* Code */}
-      <div className="rounded border border-border bg-[#1e1e1e] p-3 overflow-x-auto">
-        <p className="text-[10px] text-muted mb-2 uppercase tracking-wider">Proof Code</p>
-        <pre className="text-xs text-zinc-300 font-mono whitespace-pre-wrap leading-relaxed">
-          {sol.submissions.code}
-        </pre>
-      </div>
+      {sol.submissions.code ? (
+        <div className="rounded-md border border-border bg-[#1e1e1e] p-3 overflow-x-auto">
+          <pre className="text-xs text-zinc-300 font-mono whitespace-pre-wrap leading-relaxed">
+            {sol.submissions.code}
+          </pre>
+        </div>
+      ) : (
+        <div className="rounded-md border border-border bg-surface/50 p-4 text-center">
+          <p className="text-sm text-muted">Sign in to view the proof code.</p>
+        </div>
+      )}
 
       {/* Notes */}
       {sol.content ? (
         <div>
           <p className="text-[10px] text-muted mb-2 uppercase tracking-wider">Notes</p>
-          <div className="rounded border border-border bg-surface/50 p-3">
+          <div className="rounded-md border border-border bg-surface/50 p-3">
             <MarkdownRenderer content={sol.content} />
           </div>
         </div>
       ) : (
         <p className="text-xs text-muted italic">No notes provided.</p>
       )}
+
+      {/* Date — bottom right */}
+      <div className="flex justify-end">
+        <span className="text-xs text-muted font-sans tabular-nums">
+          {new Date(sol.created_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </span>
+      </div>
     </div>
   );
 }

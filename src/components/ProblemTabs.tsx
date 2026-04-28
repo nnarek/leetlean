@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Problem } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/lib/supabase/client";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import SubmissionsList from "@/components/SubmissionsList";
@@ -15,9 +17,23 @@ interface ProblemTabsProps {
 }
 
 export default function ProblemTabs({ problem, initialTab }: ProblemTabsProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>(
     (initialTab === "solutions" || initialTab === "submissions") ? initialTab : "description"
   );
+  const [solved, setSolved] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setSolved(false); return; }
+    const supabase = createClient();
+    supabase
+      .from("submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("problem_id", problem.id)
+      .eq("user_id", user.id)
+      .eq("status", "accepted")
+      .then(({ count }) => setSolved((count ?? 0) > 0));
+  }, [user, problem.id]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "description", label: "Description" },
@@ -41,6 +57,13 @@ export default function ProblemTabs({ problem, initialTab }: ProblemTabsProps) {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-foreground">{problem.title}</h1>
           <DifficultyBadge difficulty={problem.difficulty} />
+          {solved && (
+            <span className="inline-flex items-center gap-1 text-[var(--badge-success-text)]" title="Solved">
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+              </svg>
+            </span>
+          )}
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {problem.tags.map((tag) => (
@@ -75,7 +98,7 @@ export default function ProblemTabs({ problem, initialTab }: ProblemTabsProps) {
       </div>
 
       {/* Tab content */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+      <div className={`min-h-0 flex-1 overflow-y-auto ${activeTab === "submissions" ? "px-6" : "px-6 py-4"}`}>
         {activeTab === "description" && (
           <MarkdownRenderer content={problem.description} />
         )}

@@ -64,11 +64,11 @@ export default function SolutionsTab({ problemId, problemSlug }: SolutionsTabPro
       const userIds = [...new Set(solutionsData.map((s: any) => s.user_id))];
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url")
+        .select("id, full_name, avatar_url, email")
         .in("id", userIds);
-      const profilesMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {};
+      const profilesMap: Record<string, { full_name: string | null; avatar_url: string | null; email: string | null }> = {};
       for (const p of profilesData || []) {
-        profilesMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url };
+        profilesMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url, email: p.email };
       }
 
       // Fetch submission code for each solution
@@ -226,10 +226,10 @@ export default function SolutionsTab({ problemId, problemSlug }: SolutionsTabPro
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         <button
           onClick={() => setShowMine(!showMine)}
-          className={`rounded px-2.5 py-1 text-xs font-medium border transition-colors ${
+          className={`cursor-pointer inline-flex items-center rounded-md px-2 py-0.5 text-xs transition ${
             showMine
-              ? "bg-accent/20 text-accent border-accent/30"
-              : "bg-transparent text-muted border-border hover:border-accent/30"
+              ? "bg-accent/15 text-accent"
+              : "bg-badge text-muted hover:text-foreground"
           }`}
         >
           My Solutions
@@ -238,10 +238,10 @@ export default function SolutionsTab({ problemId, problemSlug }: SolutionsTabPro
           <button
             key={tag}
             onClick={() => toggleTag(tag)}
-            className={`rounded px-2.5 py-1 text-xs font-medium border transition-colors ${
+            className={`cursor-pointer inline-flex items-center rounded-md px-2 py-0.5 text-xs transition ${
               selectedTags.includes(tag)
-                ? "bg-accent/20 text-accent border-accent/30"
-                : "bg-transparent text-muted border-border hover:border-accent/30"
+                ? "bg-accent/15 text-accent"
+                : "bg-badge text-muted hover:text-foreground"
             }`}
           >
             {tag}
@@ -254,64 +254,78 @@ export default function SolutionsTab({ problemId, problemSlug }: SolutionsTabPro
           {showMine ? "You haven't shared any solutions yet." : "No solutions shared yet. Be the first!"}
         </p>
       ) : (
-        <div className="space-y-1.5">
-          {solutions.map((sol) => (
-            <button
-              key={sol.id}
-              onClick={() => openSolution(sol)}
-              className="w-full text-left rounded border border-border bg-surface/30 px-3 py-2.5 hover:border-accent/30 hover:bg-surface/60 transition-colors"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {sol.title || "Untitled Solution"}
-                  </span>
-                  {/* Own solutions: public/private badge */}
-                  {sol.user_id === user?.id && (
-                    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium shrink-0 ${
-                      sol.is_public
-                        ? "bg-green-900/30 text-green-400 border border-green-400/20"
-                        : "bg-yellow-900/30 text-yellow-400 border border-yellow-400/20"
-                    }`}>
-                      {sol.is_public ? "Public" : "Private"}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span
-                    className={`flex items-center gap-1 text-xs ${
-                      sol.user_has_liked ? "text-red-400" : "text-muted"
-                    }`}
-                  >
-                    {sol.user_has_liked ? "\u2665" : "\u2661"} {sol.like_count}
-                  </span>
-                  <span className="text-xs text-muted">
-                    {new Date(sol.created_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-muted">
-                  {sol.profiles.full_name || "Anonymous"}
-                </span>
-              </div>
-              {sol.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {sol.tags.map((tag) => (
+        <div>
+          {solutions.map((sol) => {
+            const username = sol.profiles.email?.split("@")[0] || "anonymous";
+            return (
+              <button
+                key={sol.id}
+                onClick={() => openSolution(sol)}
+                className="w-full text-left px-3 py-2.5 transition-colors hover:bg-hover cursor-pointer flex items-start gap-2.5"
+              >
+                {/* Avatar */}
+                {sol.profiles.avatar_url ? (
+                  <img
+                    src={sol.profiles.avatar_url}
+                    alt=""
+                    className="h-8 w-8 rounded-full shrink-0 mt-0.5"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-badge border border-border flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xs text-muted">{username[0]?.toUpperCase()}</span>
+                  </div>
+                )}
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  {/* Row 1: username + visibility badge ... upvote (top-right) */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">{username}</span>
+                    {sol.user_id === user?.id && (
+                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium shrink-0 border ${
+                        sol.is_public ? "badge-success" : "badge-warning"
+                      }`}>
+                        {sol.is_public ? "Public" : "Private"}
+                      </span>
+                    )}
                     <span
-                      key={tag}
-                      className="inline-flex items-center rounded bg-badge px-1.5 py-0.5 text-[10px] text-muted border border-border"
+                      className={`ml-auto flex items-center gap-0.5 text-xs shrink-0 ${
+                        sol.user_has_liked ? "text-accent" : "text-muted"
+                      }`}
                     >
-                      {tag}
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 19V5M5 12l7-7 7 7" />
+                      </svg>
+                      {sol.like_count}
                     </span>
-                  ))}
+                  </div>
+                  {/* Row 2: Title */}
+                  <p className="text-sm font-medium text-foreground truncate mt-0.5">
+                    {sol.title || "Untitled Solution"}
+                  </p>
+                  {/* Row 3: Tags ... date (bottom-right) */}
+                  <div className="flex items-center gap-1 mt-1 min-h-[20px]">
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {sol.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center rounded-md px-2 py-0.5 text-xs bg-badge text-muted"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted font-sans tabular-nums shrink-0">
+                      {new Date(sol.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

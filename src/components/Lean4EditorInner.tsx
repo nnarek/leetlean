@@ -220,6 +220,20 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
     };
   }, [handleKeyDown, handleKeyUp]);
 
+  // Listen for "load code into editor" events from SubmissionView
+  useEffect(() => {
+    const handleLoadCode = (e: Event) => {
+      const code = (e as CustomEvent).detail?.code;
+      if (code && editor) {
+        editor.getModel()?.setValue(code);
+        setCode(code);
+        if (storageId) saveCodeForProblem(storageId, code);
+      }
+    };
+    window.addEventListener('leetlean:load-code', handleLoadCode);
+    return () => window.removeEventListener('leetlean:load-code', handleLoadCode);
+  }, [editor, setCode, storageId]);
+
   // Disable context menu outside editor
   useEffect(() => {
     const handleContextMenu = (event: MouseEvent) => {
@@ -292,6 +306,7 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
         code: currentCode,
         status,
         name: autoName,
+        errors: result.valid ? null : (result.error || null),
       });
 
       if (error) {
@@ -330,16 +345,8 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              style={{
-                background: submitting ? 'var(--muted)' : 'var(--accent, #3b82f6)',
-                border: 'none',
-                cursor: submitting ? 'not-allowed' : 'pointer',
-                fontSize: '0.75rem',
-                color: '#fff',
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontWeight: 600,
-              }}
+              className="vscode-menu-btn"
+              style={submitting ? { opacity: 0.6, cursor: 'not-allowed' } : { background: '#0078d4', color: '#fff' }}
               title={user ? 'Submit your proof for verification' : 'Sign in to submit'}
             >
               {submitting ? 'Verifying...' : 'Submit'}
@@ -347,43 +354,21 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
           )}
           <button
             onClick={handleReset}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              padding: '2px 8px',
-              borderRadius: '4px',
-            }}
+            className="vscode-menu-btn"
             title="Reset to starter code"
           >
             Reset
           </button>
           <button
             onClick={() => leanMonacoRef.current?.restart()}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              padding: '2px 6px',
-            }}
+            className="vscode-menu-btn"
             title="Restart Lean server"
           >
             Restart
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              padding: '2px 6px',
-            }}
+            className="vscode-menu-btn"
             title="Editor Settings"
           >
             Settings
@@ -392,12 +377,7 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
             href={openInNewTabUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--muted)',
-              textDecoration: 'none',
-              padding: '2px 6px',
-            }}
+            className="vscode-menu-btn"
             title="Open in lean4web"
           >
             Open in new tab ↗
