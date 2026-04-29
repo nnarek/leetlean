@@ -4,6 +4,7 @@ title: "Addition is Commutative"
 difficulty: "medium"
 tags: ["natural-numbers", "induction", "arithmetic"]
 sort_order: 6
+main_theorem_name: "add_comm"
 starter_code: |
   -- Prove that addition of natural numbers is commutative.
   -- You will need induction and some helper lemmas.

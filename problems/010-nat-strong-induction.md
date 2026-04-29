@@ -4,6 +4,7 @@ title: "Strong Induction Principle"
 difficulty: "hard"
 tags: ["natural-numbers", "induction", "advanced"]
 sort_order: 10
+main_theorem_name: "strong_induction"
 starter_code: |
   -- Prove that every natural number has a property P,
   -- given that P holds for n whenever it holds for all m < n.

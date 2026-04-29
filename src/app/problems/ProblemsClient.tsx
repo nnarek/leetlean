@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/lib/supabase/client";
 
 type SortField = "sort_order" | "difficulty" | "title";
 type SortOrder = "asc" | "desc";
@@ -36,6 +38,9 @@ export default function ProblemsClient() {
   const [total, setTotal] = useState(0);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set());
+  const [completionFilter, setCompletionFilter] = useState<"" | "completed" | "not_completed">("");
+  const { user } = useAuth();
   const [sortOpen, setSortOpen] = useState(false);
   const [perPageOpen, setPerPageOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
@@ -53,6 +58,22 @@ export default function ProblemsClient() {
   useEffect(() => {
     db.getAllTags().then(setAllTags);
   }, [db]);
+
+  // Fetch user's solved problem IDs
+  useEffect(() => {
+    if (!user) { setSolvedIds(new Set()); return; }
+    const supabase = createClient();
+    supabase
+      .from("submissions")
+      .select("problem_id")
+      .eq("user_id", user.id)
+      .eq("status", "accepted")
+      .then(({ data }) => {
+        if (data) {
+          setSolvedIds(new Set(data.map((d: { problem_id: string }) => d.problem_id)));
+        }
+      });
+  }, [user]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -181,6 +202,13 @@ export default function ProblemsClient() {
   const perPageOptions = ["5", "10", "15", "20", "50"];
   const currentSortLabel = sortOptions.find((o) => o.value === sortBy)?.label;
 
+  // Client-side completion filter
+  const filteredProblems = useMemo(() => {
+    if (!completionFilter) return problemList;
+    if (completionFilter === "completed") return problemList.filter((p) => solvedIds.has(p.id));
+    return problemList.filter((p) => !solvedIds.has(p.id));
+  }, [problemList, completionFilter, solvedIds]);
+
   return (
     <div className="mx-auto max-w-[90rem] px-4 pt-6 pb-4 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10">
@@ -201,6 +229,16 @@ export default function ProblemsClient() {
                 >
                   Search
                 </button>
+                {/* Reset (show only when filters active) */}
+                {(q || tagsParam || difficulty || completionFilter) && (
+                  <Link
+                    href="/problems"
+                    onClick={() => setCompletionFilter("")}
+                    className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:text-foreground hover:border-foreground/20"
+                  >
+                    Reset
+                  </Link>
+                )}
               </form>
 
               {/* Difficulty pills */}
@@ -209,7 +247,7 @@ export default function ProblemsClient() {
                   <button
                     key={d}
                     onClick={() => handleDifficulty(d)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all duration-150 ${
+                    className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all duration-150 ${
                       difficulty === d
                         ? "bg-accent text-white shadow-sm"
                         : "text-muted hover:text-foreground"
@@ -219,6 +257,38 @@ export default function ProblemsClient() {
                   </button>
                 ))}
               </div>
+
+              {/* Completion filter pills */}
+              {user && (
+                <div className="flex items-center rounded-lg border border-border bg-surface p-0.5">
+                  <button
+                    onClick={() => setCompletionFilter(completionFilter === "completed" ? "" : "completed")}
+                    title="Show only completed problems"
+                    className={`cursor-pointer rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 flex items-center gap-1 ${
+                      completionFilter === "completed"
+                        ? "bg-accent text-white shadow-sm"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    <svg className="h-3 w-3" viewBox="0 0 448 512" fill="currentColor">
+                      <path d="M441 103c9.4 9.4 9.4 24.6 0 33.9L177 401c-9.4 9.4-24.6 9.4-33.9 0L7 265c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l119 119L407 103c9.4-9.4 24.6-9.4 33.9 0z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setCompletionFilter(completionFilter === "not_completed" ? "" : "not_completed")}
+                    title="Show only unsolved problems"
+                    className={`cursor-pointer rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 flex items-center gap-1 ${
+                      completionFilter === "not_completed"
+                        ? "bg-accent text-white shadow-sm"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    <svg className="h-3 w-3" viewBox="0 0 384 512" fill="currentColor">
+                      <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               {/* Sort dropdown */}
               <div ref={sortRef} className="relative">
@@ -279,16 +349,6 @@ export default function ProblemsClient() {
                   </div>
                 )}
               </div>
-
-              {/* Reset (show only when filters active) */}
-              {(q || tagsParam || difficulty) && (
-                <Link
-                  href="/problems"
-                  className="rounded-lg border border-border px-3 py-2 text-sm text-muted transition hover:text-foreground hover:border-foreground/20"
-                >
-                  Reset
-                </Link>
-              )}
             </div>
 
             {/* Problems table */}
@@ -299,6 +359,9 @@ export default function ProblemsClient() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-surface">
+                    <th className="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-muted w-10">
+
+                    </th>
                     <th className="px-6 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted">
                       #
                     </th>
@@ -314,27 +377,36 @@ export default function ProblemsClient() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {!loading && problemList.length === 0 ? (
+                  {!loading && filteredProblems.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="px-6 py-12 text-center text-muted"
                       >
                         No problems found.
                       </td>
                     </tr>
                   ) : (
-                    problemList.map((problem) => (
+                    filteredProblems.map((problem) => (
                       <tr
                         key={problem.id}
-                        className="transition hover:bg-hover"
+                        onClick={() => router.push(`/problems/${problem.slug}`)}
+                        className="transition hover:bg-hover cursor-pointer"
                       >
+                        <td className="px-3 py-2.5 text-center">
+                          {solvedIds.has(problem.id) && (
+                            <svg className="inline h-4 w-4 text-[var(--badge-success-text)]" viewBox="0 0 448 512" fill="currentColor">
+                              <path d="M441 103c9.4 9.4 9.4 24.6 0 33.9L177 401c-9.4 9.4-24.6 9.4-33.9 0L7 265c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l119 119L407 103c9.4-9.4 24.6-9.4 33.9 0z" />
+                            </svg>
+                          )}
+                        </td>
                         <td className="px-6 py-2.5 text-sm font-mono text-muted">
                           {problem.sort_order}
                         </td>
                         <td className="px-6 py-2.5">
                           <Link
                             href={`/problems/${problem.slug}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="text-sm font-medium text-foreground transition hover:text-accent"
                           >
                             {problem.title}
@@ -348,8 +420,8 @@ export default function ProblemsClient() {
                             {problem.tags.map((t) => (
                               <button
                                 key={t}
-                                onClick={() => toggleTag(t)}
-                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs transition ${
+                                onClick={(e) => { e.stopPropagation(); toggleTag(t); }}
+                                className={`cursor-pointer inline-flex items-center rounded-md px-2 py-0.5 text-xs transition ${
                                   selectedTags.includes(t)
                                     ? "bg-accent/15 text-accent"
                                     : "bg-badge text-muted hover:text-foreground"
@@ -461,7 +533,7 @@ export default function ProblemsClient() {
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-md border px-2.5 py-1 text-sm transition-all duration-150 ${
+                      className={`cursor-pointer rounded-md border px-2.5 py-1 text-sm transition-all duration-150 ${
                         isSelected
                           ? "border-accent/40 bg-accent/15 text-accent font-medium"
                           : "border-border text-muted hover:bg-hover hover:text-foreground"

@@ -18,6 +18,17 @@
   --danger: #f44747;
   --code-bg: #2d2d30;
   --card-bg: var(--surface);
+
+  /* Badge colors */
+  --badge-success-bg: rgba(34, 197, 94, 0.15);
+  --badge-success-text: #4ade80;
+  --badge-success-border: rgba(74, 222, 128, 0.2);
+  --badge-warning-bg: rgba(234, 179, 8, 0.15);
+  --badge-warning-text: #facc15;
+  --badge-warning-border: rgba(250, 204, 21, 0.2);
+  --badge-danger-bg: rgba(239, 68, 68, 0.15);
+  --badge-danger-text: #f87171;
+  --badge-danger-border: rgba(248, 113, 113, 0.2);
 }
 
 :root[data-theme="light"] {
@@ -33,6 +44,17 @@
   --badge: #e8e8e8;
   --code-bg: #f3f3f3;
   --card-bg: var(--surface);
+
+  /* Badge colors — light theme (stronger for visibility on white bg) */
+  --badge-success-bg: rgba(22, 163, 74, 0.15);
+  --badge-success-text: #166534;
+  --badge-success-border: rgba(22, 163, 74, 0.5);
+  --badge-warning-bg: rgba(202, 138, 4, 0.15);
+  --badge-warning-text: #854d0e;
+  --badge-warning-border: rgba(161, 98, 7, 0.5);
+  --badge-danger-bg: rgba(220, 38, 38, 0.15);
+  --badge-danger-text: #991b1b;
+  --badge-danger-border: rgba(220, 38, 38, 0.5);
 }
 
 @theme inline {
@@ -77,10 +99,14 @@ body {
   background: #505050;
 }
 
-/* Selection */
+/* Selection — use !important to prevent Monaco theme overrides */
 ::selection {
-  background: color(var(--accent) lightness(40%));
-  color: white;
+  background: #3390ff !important;
+  color: white !important;
+}
+::-moz-selection {
+  background: #3390ff !important;
+  color: white !important;
 }
 
 /* Remove typographic backticks added by the prose (typography plugin) for inline code */
@@ -104,7 +130,7 @@ body {
 }
 
 :root[data-theme="light"] .markdown-content code {
-  background: #f3f3f3 !important;
+  background: #ebebeb !important;
   color: #0066b8 !important;
 }
 
@@ -134,4 +160,72 @@ body {
 :root[data-theme="light"] .markdown-content td {
   border-color: #d4d4d4 !important;
   color: #1e1e1e !important;
+}
+
+/* Badge utility classes */
+.badge-success {
+  background-color: var(--badge-success-bg) !important;
+  color: var(--badge-success-text) !important;
+  border-color: var(--badge-success-border) !important;
+}
+.badge-warning {
+  background-color: var(--badge-warning-bg) !important;
+  color: var(--badge-warning-text) !important;
+  border-color: var(--badge-warning-border) !important;
+}
+.badge-danger {
+  background-color: var(--badge-danger-bg) !important;
+  color: var(--badge-danger-text) !important;
+  border-color: var(--badge-danger-border) !important;
+}
+
+/* Difficulty badge light-theme overrides */
+:root[data-theme="light"] .difficulty-easy {
+  color: #0055a4 !important;
+  background-color: rgba(0, 85, 164, 0.1) !important;
+  border-color: rgba(0, 85, 164, 0.3) !important;
+}
+:root[data-theme="light"] .difficulty-medium {
+  color: #b45309 !important;
+  background-color: rgba(180, 83, 9, 0.1) !important;
+  border-color: rgba(180, 83, 9, 0.3) !important;
+}
+:root[data-theme="light"] .difficulty-hard {
+  color: #b91c1c !important;
+  background-color: rgba(185, 28, 28, 0.1) !important;
+  border-color: rgba(185, 28, 28, 0.3) !important;
+}
+
+/* VS Code Dark Modern menu bar button style */
+.vscode-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.80rem;
+  color: #cccccc;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.1s;
+}
+.vscode-menu-btn:hover {
+  background-color: rgba(90, 93, 94, 0.31);
+}
+:root[data-theme="light"] .vscode-menu-btn {
+  color: #3b3b3b;
+}
+:root[data-theme="light"] .vscode-menu-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Lean 4 syntax highlighting — container for Monaco colorize output */
+.lean-code-block {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  font-family: var(--font-mono), 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  white-space: pre-wrap;
+  color: var(--foreground);
+  margin: 0;
 }

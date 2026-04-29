@@ -4,6 +4,7 @@ title: "Implies Transitivity"
 difficulty: "easy"
 tags: ["logic", "implication", "tactics"]
 sort_order: 3
+main_theorem_name: "implies_trans"
 starter_code: |
   -- Prove that implication is transitive.
   -- If P → Q and Q → R, then P → R.

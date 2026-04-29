@@ -4,6 +4,7 @@ title: "Hello, Lean!"
 difficulty: "easy"
 tags: ["basics", "introduction"]
 sort_order: 1
+main_theorem_name: "hello_lean"
 starter_code: |
   -- Welcome to LeetLean!
   -- Your goal: make this file compile with no errors.
@@ -13,7 +14,6 @@ starter_code: |
     sorry
 ---
 
-# Hello, Lean!
  
 Welcome to your first LeetLean problem! This is a warmup to make sure you can use the editor.
 

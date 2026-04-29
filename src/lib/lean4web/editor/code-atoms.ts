@@ -1,36 +1,73 @@
-// LEETLEAN: Code persistence via localStorage (like LeetCode), not URL hash.
+// LEETLEAN: Per-problem code persistence via localStorage.
 import { atom } from 'jotai'
 
-const STORAGE_KEY = 'leetlean:editor-code'
+const STORAGE_PREFIX = 'leetlean:editor-code:'
+const OLD_GLOBAL_KEY = 'leetlean:editor-code'
 
-function loadCode(): string {
-  if (typeof window === 'undefined') return ''
+/**
+ * Remove the legacy global key (used before per-problem caching was added).
+ * This prevents stale global state from interfering with per-problem keys.
+ * Called once on first load.
+ */
+let _migrated = false
+function migrateOldGlobalKey() {
+  if (_migrated || typeof window === 'undefined') return
+  _migrated = true
   try {
-    return localStorage.getItem(STORAGE_KEY) ?? ''
+    if (localStorage.getItem(OLD_GLOBAL_KEY) !== null) {
+      console.debug('[LeetLean] Removing legacy global editor-code key')
+      localStorage.removeItem(OLD_GLOBAL_KEY)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/** Load saved code for a specific problem from localStorage. */
+export function loadCodeForProblem(problemId: string): string {
+  if (typeof window === 'undefined') return ''
+  migrateOldGlobalKey()
+  if (!problemId) {
+    console.warn('[LeetLean] loadCodeForProblem called with empty problemId')
+    return ''
+  }
+  try {
+    const key = STORAGE_PREFIX + problemId
+    const saved = localStorage.getItem(key) ?? ''
+    console.debug('[LeetLean] loadCodeForProblem', { problemId, key, hasCode: saved.length > 0 })
+    return saved
   } catch {
     return ''
   }
 }
 
-function saveCode(code: string) {
+/** Save code for a specific problem to localStorage. */
+export function saveCodeForProblem(problemId: string, code: string) {
+  if (!problemId) {
+    console.warn('[LeetLean] saveCodeForProblem called with empty problemId — skipping')
+    return
+  }
   try {
+    const key = STORAGE_PREFIX + problemId
     if (code.length === 0) {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(key)
     } else {
-      localStorage.setItem(STORAGE_KEY, code)
+      localStorage.setItem(key, code)
     }
   } catch {
     // storage full or unavailable
   }
 }
 
-const codeBaseAtom = atom<string>(loadCode())
+/** Clear saved code for a specific problem. */
+export function clearCodeForProblem(problemId: string) {
+  if (!problemId) return
+  try {
+    localStorage.removeItem(STORAGE_PREFIX + problemId)
+  } catch {
+    // ignore
+  }
+}
 
-/** Atom which represents the editor content and persists it to localStorage. */
-export const codeAtom = atom(
-  (get) => get(codeBaseAtom),
-  (_get, set, code: string) => {
-    set(codeBaseAtom, code)
-    saveCode(code)
-  },
-)
+/** In-memory atom for current editor code (no persistence — persistence is handled per-problem). */
+export const codeAtom = atom<string>('')

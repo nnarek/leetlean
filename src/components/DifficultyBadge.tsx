@@ -3,9 +3,9 @@
 import { Difficulty } from "@/lib/types";
 
 const colors: Record<Difficulty, string> = {
-  easy: "bg-[#6aadfe]/10 text-[#6aadfe] border-[#6aadfe]/20",
-  medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  hard: "bg-red-500/10 text-red-400 border-red-500/20",
+  easy: "bg-[#6aadfe]/10 text-[#6aadfe] border-[#6aadfe]/20 difficulty-easy",
+  medium: "bg-amber-500/10 text-amber-400 border-amber-500/20 difficulty-medium",
+  hard: "bg-red-500/10 text-red-400 border-red-500/20 difficulty-hard",
 };
 
 export default function DifficultyBadge({

@@ -4,6 +4,7 @@ title: "Or is Commutative"
 difficulty: "medium"
 tags: ["logic", "or", "tactics"]
 sort_order: 5
+main_theorem_name: "or_comm_proof"
 starter_code: |
   -- Prove that disjunction is commutative.
 
