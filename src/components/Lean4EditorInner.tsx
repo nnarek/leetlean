@@ -129,7 +129,10 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
         const savedCode = storageId ? loadCodeForProblem(storageId) : '';
         const codeToUse = savedCode || initialCode || '';
 
-        const fileName = `${PROJECT_FOLDER}/${PROJECT_FOLDER}.lean`;
+        // Use a unique file name per problem to prevent Monaco model sharing
+        // across different problems (avoids cross-contamination of saved code).
+        const fileSlug = problemSlug || storageId || 'default';
+        const fileName = `${PROJECT_FOLDER}/${fileSlug}.lean`;
         await _leanMonacoEditor.start(editorRef.current!, fileName, codeToUse);
         if (disposed) return;
 
@@ -139,6 +142,7 @@ function Lean4EditorCore({ initialCode, problemId, problemSlug, mainTheoremName 
 
         // Keep code atom + per-problem localStorage in sync with editor changes
         _leanMonacoEditor.editor?.onDidChangeModelContent(() => {
+          if (disposed) return; // Don't persist during disposal
           const val = _leanMonacoEditor.editor?.getModel()?.getValue() ?? '';
           setCode(val);
           if (storageId) saveCodeForProblem(storageId, val);
